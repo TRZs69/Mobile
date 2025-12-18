@@ -1,9 +1,13 @@
+import 'dart:math';
+
 import 'package:app/model/chapter_status.dart';
 import 'package:app/model/user_course.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/view/already_finished_assessment.dart';
 import 'package:app/view/assessment_screen.dart';
 import 'package:app/view/assignment_screen.dart';
+import 'package:app/view/learning_assistant_quick_ask.dart';
+import 'package:app/view/learning_assistant_screen.dart';
 import 'package:app/view/material_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -45,6 +49,13 @@ class _ChapterScreenState extends State<Chapterscreen> with TickerProviderStateM
   bool _materialLocked = false;
   bool _assessmentStarted = false;
   bool _assessmentFinished = false;
+  bool _showFabHelp = true;
+  late final String _fabHelpText;
+
+  static const List<String> _fabHelpTexts = [
+    "Butuh bantuan?",
+    "Ada yang belum kamu pahami?",
+  ];
 
   @override
   void initState() {
@@ -52,10 +63,20 @@ class _ChapterScreenState extends State<Chapterscreen> with TickerProviderStateM
     status = widget.status;
     user = widget.user;
     super.initState();
+    _fabHelpText = _fabHelpTexts[Random().nextInt(_fabHelpTexts.length)];
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _currentIndex = _tabController.index;
+      });
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _showFabHelp = true);
+      Future.delayed(const Duration(seconds: 6), () {
+        if (!mounted) return;
+        setState(() => _showFabHelp = false);
       });
     });
   }
@@ -175,6 +196,70 @@ class _ChapterScreenState extends State<Chapterscreen> with TickerProviderStateM
               ),
             ],
           ),
+          floatingActionButton: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (_showFabHelp)
+                  GestureDetector(
+                    onTap: () => setState(() => _showFabHelp = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                        border: Border.all(color: AppColors.accentColor),
+                      ),
+                      child: Text(
+                        _fabHelpText,
+                        style: const TextStyle(
+                          fontFamily: 'DIN_Next_Rounded',
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                FloatingActionButton(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  tooltip: 'Tanya Levely',
+                  onPressed: () async {
+                    setState(() => _showFabHelp = false);
+                    final messages = await showLearningAssistantQuickAsk(
+                      context,
+                      courseId: widget.uc.courseId,
+                      level: widget.level,
+                      chapterName: widget.chapterName,
+                    );
+                    if (!context.mounted) return;
+                    if (messages == null) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LearningAssistantScreen(
+                          courseId: widget.uc.courseId,
+                          level: widget.level,
+                          chapterName: widget.chapterName,
+                          initialMessages: messages,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Icon(Icons.smart_toy_outlined),
+                ),
+              ],
+            ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         )
     );
   }

@@ -4,7 +4,6 @@ import 'package:app/view/course_initial_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/course.dart';
-import 'course_detail_screen.dart';
 
 Color purple = AppColors.primaryColor;
 Color backgroundNavHex = Color(0xFFF3EDF7);

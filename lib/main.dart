@@ -14,11 +14,10 @@ void main() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool isFirstLaunch = prefs.getBool('firstLaunch') ?? true;
   final bool isLoggedIn = await checkLoginStatus();
-  // final bool isLoggedIn = true;
 
   await Supabase.initialize(
-      url: "https://kfxaanhuccwjokmkdtho.supabase.co",
-      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmeGFhbmh1Y2N3am9rbWtkdGhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwNDE1MDEsImV4cCI6MjA1NTYxNzUwMX0.icFBLGnPC8eqbxnGuovKNnJ5Frvm_SnFrPDsoFlfNEA"
+      url: "https://vvivfqnqxnpfpijrvkkb.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2aXZmcW5xeG5wZnBpanJ2a2tiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MTQxMjEsImV4cCI6MjA3NDE5MDEyMX0.VwNktSJnyCuvBHEEMw4hv4wsHm7wT1MxS6foqR2i4Nk"
   );
   runApp(MyApp(isLoggedIn: isLoggedIn, isFirstLaunch: isFirstLaunch));
 }
@@ -35,7 +34,6 @@ class MyApp extends StatelessWidget {
 
   const MyApp({super.key, required this.isLoggedIn, required this.isFirstLaunch});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     Widget home;

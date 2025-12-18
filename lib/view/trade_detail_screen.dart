@@ -208,7 +208,12 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
                   fontFamily: 'DIN_Next_Rounded',
                 ),),
                 SizedBox(height: 12,),
-                ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(widget.trade.image)),
+                ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: widget.trade.image.toLowerCase().startsWith('http')
+                        ? Image.network(widget.trade.image)
+                        : Image.asset(widget.trade.image)
+                ),
                 SizedBox(height: 16),
                 Text(
                   widget.trade.title,
@@ -342,7 +347,9 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
               // 📌 Trade Details
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(widget.trade.image, height: 180, fit: BoxFit.cover),
+                child: widget.trade.image.toLowerCase().startsWith('http')
+                    ? Image.network(widget.trade.image, height: 180, fit: BoxFit.cover)
+                    : Image.asset(widget.trade.image, height: 180, fit: BoxFit.cover),
               ),
               const SizedBox(height: 16),
 
