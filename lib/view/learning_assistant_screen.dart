@@ -1,7 +1,8 @@
 import 'package:app/utils/colors.dart';
 import 'package:app/model/levely_models.dart';
 import 'package:app/service/levely_gamification.dart';
-import 'package:app/service/levely_engine.dart';
+import 'package:app/service/chapter_service.dart';
+import 'package:app/service/levely_companion.dart';
 import 'package:app/service/levely_quiz_bank.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,7 @@ class LearningAssistantScreen extends StatefulWidget {
   final int? courseId;
   final int? level;
   final String? chapterName;
+  final int? chapterId;
   final List<LevelyChatMessage>? initialMessages;
 
   const LearningAssistantScreen({
@@ -16,6 +18,7 @@ class LearningAssistantScreen extends StatefulWidget {
     this.courseId,
     this.level,
     this.chapterName,
+    this.chapterId,
     this.initialMessages,
   });
 
@@ -24,12 +27,13 @@ class LearningAssistantScreen extends StatefulWidget {
 }
 
 class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
-  final LevelyEngine _engine = LevelyEngine();
+  final LevelyCompanion _companion = LevelyCompanion();
   final TextEditingController _composer = TextEditingController();
   final List<LevelyChatMessage> _messages = [];
   LevelyProgress _progress = LevelyProgress.empty();
-  bool _loadingProgress = false; // UI-only mock for now
-  int _tabIndex = 0; // 0 chat, 1 quiz
+  bool _loadingProgress = false;
+  int _tabIndex = 1; // 0 chat, 1 quiz
+  String? _materialContent;
 
   String _selectedTopic = LevelyQuizBank.topics.first;
   QuizQuestion? _question;
@@ -39,7 +43,12 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
   @override
   void initState() {
     super.initState();
-    _question = _pickQuestion(topic: _selectedTopic, difficulty: _progress.topicOrDefault(_selectedTopic).currentDifficulty);
+    _question = _pickQuestion(
+      topic: _selectedTopic,
+      difficulty: _progress.topicOrDefault(_selectedTopic).currentDifficulty,
+    );
+    _loadProgress();
+    _loadMaterial();
 
     if (widget.initialMessages != null && widget.initialMessages!.isNotEmpty) {
       _messages.addAll(widget.initialMessages!);
@@ -49,7 +58,7 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
     _messages.insert(
       0,
       LevelyChatMessage.assistant(
-        "Halo! Aku Levely. Tanyakan apa pun tentang course atau level yang sedang kamu kerjakan.",
+        "Halo! Aku Levely. Tanyakan soal bab atau topik yang sedang kamu pelajari.",
       ),
     );
     if (widget.courseId != null || widget.level != null || widget.chapterName != null) {
@@ -61,6 +70,34 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
   void dispose() {
     _composer.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadProgress() async {
+    setState(() => _loadingProgress = true);
+    final progress = await _companion.loadProgress();
+    if (!mounted) return;
+    setState(() {
+      _progress = progress;
+      _question = _pickQuestion(
+        topic: _selectedTopic,
+        difficulty: _progress.topicOrDefault(_selectedTopic).currentDifficulty,
+      );
+      _loadingProgress = false;
+    });
+  }
+
+  Future<void> _loadMaterial() async {
+    final chapterId = widget.chapterId;
+    if (chapterId == null) return;
+    try {
+      final material = await ChapterService.getMaterialByChapterId(chapterId);
+      if (!mounted) return;
+      setState(() {
+        _materialContent = material.content;
+      });
+    } catch (_) {
+      // Ignore material load failures; fallback to non-RAG answers.
+    }
   }
 
   String _contextSummary() {
@@ -85,29 +122,24 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
       _messages.insert(0, LevelyChatMessage.assistant(_mockTyping()));
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 450));
+    final history = _messages.skip(1).toList();
+    final reply = await _companion.quickAsk(
+      prompt: text,
+      progress: _progress,
+      history: history,
+      courseId: widget.courseId,
+      level: widget.level,
+      chapterName: widget.chapterName,
+      materialContent: _materialContent,
+    );
     if (!mounted) return;
     setState(() {
       _messages.removeAt(0);
-      _messages.insert(0, LevelyChatMessage.assistant(_mockChatAnswer(text)));
+      _messages.insert(0, LevelyChatMessage.assistant(reply));
     });
   }
 
-  String _mockTyping() => "…";
-
-  String _mockChatAnswer(String userMessage) {
-    final p = userMessage.toLowerCase();
-    if (p.contains('kuis') || p.contains('quiz') || p.contains('latihan')) {
-      return "Siap. Kamu bisa pindah ke tab Kuis untuk latihan. Mau fokus topik apa dulu (Usability/Heuristics/User Research)?";
-    }
-    if (p.contains('usability')) {
-      return "Usability itu seberapa mudah dan efektif user mencapai tujuan.\n- Efektivitas: error rendah\n- Efisiensi: waktu singkat\n- Kepuasan: pengalaman nyaman\n\nBagian mana yang kamu masih bingung?";
-    }
-    if (p.contains('heuristik') || p.contains('heuristics')) {
-      return "Heuristik (mis. Nielsen) adalah aturan praktis untuk menilai UI.\n- Sistem harus kasih feedback status\n- User butuh kontrol (undo)\n- Konsisten & sesuai dunia nyata\n\nKamu mau bahas heuristik yang mana?";
-    }
-    return "Oke, aku bantu.\n- Tulis topiknya (materi apa)\n- Jelaskan bagian yang bikin bingung\n- Kalau ada, kirim contoh soal\n\nKamu mau penjelasan singkat atau latihan soal?";
-  }
+  String _mockTyping() => ".";
 
   QuizQuestion _pickQuestion({required String topic, required QuizDifficulty difficulty}) {
     final candidates = LevelyQuizBank.by(topic, difficulty);
@@ -131,20 +163,17 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
     final selected = _selectedChoice;
     if (q == null || selected == null) return;
 
-    final result = LevelyGamification.applyQuizResult(
+    final result = await _companion.observeQuiz(
       progress: _progress,
       question: q,
-      isCorrect: selected == q.correctIndex,
+      selectedIndex: selected,
       now: DateTime.now(),
     );
     if (!mounted) return;
 
-    final feedback = _feedbackForQuiz(question: q, selectedIndex: selected, pointsDelta: result.pointsDelta);
-    final rec = LevelyGamification.buildRecommendation(result.progress);
-
     setState(() {
       _progress = result.progress;
-      _quizFeedback = "$feedback\n\nRekomendasi: $rec";
+      _quizFeedback = result.feedback;
     });
 
     if (result.newlyUnlocked.isNotEmpty) {
@@ -153,20 +182,6 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
         SnackBar(content: Text("Badge baru terbuka: $title")),
       );
     }
-  }
-
-  String _feedbackForQuiz({
-    required QuizQuestion question,
-    required int selectedIndex,
-    required int pointsDelta,
-  }) {
-    final correct = selectedIndex == question.correctIndex;
-    if (correct) {
-      return "Jawaban kamu sudah benar. +$pointsDelta poin.\n\n${question.explanation}";
-    }
-    final chosen = question.choices[selectedIndex];
-    final correctChoice = question.choices[question.correctIndex];
-    return "Sepertinya kamu masih bingung. Jawaban kamu: \"$chosen\".\nYang benar: \"$correctChoice\". +$pointsDelta poin.\n\n${question.explanation}\n\nMau coba contoh lain atau lanjut soal berikutnya?";
   }
 
   @override
@@ -308,7 +323,7 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
                             if (v == null) return;
                             setState(() {
                               _selectedTopic = v;
-                              _question = _engine.nextQuestion(progress: _progress, topic: _selectedTopic);
+                              _question = _companion.engine.nextQuestion(progress: _progress, topic: _selectedTopic);
                               _selectedChoice = null;
                               _quizFeedback = null;
                             });
@@ -378,17 +393,19 @@ class _LearningAssistantScreenState extends State<LearningAssistantScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 10),
-          Card(
-            color: Colors.white.withValues(alpha: 0.95),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                LevelyGamification.buildRecommendation(_progress),
-                style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+          if (_quizFeedback != null) ...[
+            const SizedBox(height: 10),
+            Card(
+              color: Colors.white.withValues(alpha: 0.95),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  LevelyGamification.buildRecommendation(_progress),
+                  style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

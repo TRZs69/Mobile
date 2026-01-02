@@ -31,6 +31,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   Student? user;
   late ChapterStatus status;
   Assessment? question;
+  Future<bool>? _resultFuture;
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
     final resultAssessment = await ChapterService.getAssessmentByChapterId(id);
     setState(() {
       question = resultAssessment;
+      _resultFuture = _calculateResults();
     });
   }
 
@@ -105,26 +107,15 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   }
 
   Widget _buildQuizResultFuture() {
+    final resultFuture = _resultFuture;
+    if (resultFuture == null) {
+      return _loadingState();
+    }
     return FutureBuilder<bool>(
-      future: _calculateResults(), // Move result calculation to async function
+      future: resultFuture, // Move result calculation to async function
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-              width: double.infinity,
-              height: double.infinity,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 10),
-                    Text("Mohon Tunggu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded'),
-                    ),
-                  ],
-                ),
-              )
-          ); // Show loading indicator while waiting
+          return _loadingState(); // Show loading indicator while waiting
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
@@ -137,26 +128,43 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   Future<bool> _calculateResults() async {
     tapped = true;
     correctAnswer = 0; // Reset the counter before starting the calculation
-    double rangeScore = 100 / question!.questions.length;
+    final questions = question?.questions ?? [];
+    if (questions.isEmpty) {
+      point = status.assessmentGrade;
+      return true;
+    }
+    double rangeScore = 100 / questions.length;
+    final answerCount = status.assessmentAnswer.length;
+    final total = answerCount < questions.length ? answerCount : questions.length;
 
-    for (int i = 0; i < status.assessmentAnswer.length; i++) {
-      question?.questions[i].selectedAnswer = status.assessmentAnswer[i];
+    for (int i = 0; i < total; i++) {
+      questions[i].selectedAnswer = status.assessmentAnswer[i];
 
-      if (question?.questions[i].type != 'EY') {
-        question?.questions[i].isCorrect =
-            question?.questions[i].selectedAnswer == question?.questions[i].correctedAnswer;
-        if (question?.questions[i].isCorrect == true) {
-          question?.questions[i].score = rangeScore.ceil();
+      if (questions[i].type != 'EY') {
+        questions[i].isCorrect =
+            questions[i].selectedAnswer == questions[i].correctedAnswer;
+        if (questions[i].isCorrect == true) {
+          questions[i].score = rangeScore.ceil();
           correctAnswer++;
           print(correctAnswer);
         }
       } else {
-        double result = await checkEssay(question!.questions[i].selectedAnswer, question!.questions[i].correctedAnswer);
-        double similarity = double.parse(result.toStringAsFixed(1));
-        print(similarity);
-        question?.questions[i].isCorrect = similarity > 0;
-        if (question?.questions[i].isCorrect == true) {
-          question?.questions[i].score = (rangeScore * similarity).ceil();
+        double similarity = 0;
+        try {
+          final result = await checkEssay(
+            questions[i].correctedAnswer,
+            questions[i].selectedAnswer,
+          ).timeout(const Duration(seconds: 8), onTimeout: () => 0.0);
+          similarity = double.parse(result.toStringAsFixed(1));
+          print(similarity);
+        } catch (e) {
+          if (kDebugMode) {
+            print("Error processing essay at index $i: $e");
+          }
+        }
+        questions[i].isCorrect = similarity > 0;
+        if (questions[i].isCorrect == true) {
+          questions[i].score = (rangeScore * similarity).ceil();
           correctAnswer++;
           print(correctAnswer);
         }
@@ -165,6 +173,27 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
 
     point = status.assessmentGrade;
     return true; // Ensure the future completes successfully
+  }
+
+  Widget _loadingState() {
+    return SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 10),
+              Text(
+                "Mohon Tunggu",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded'),
+              ),
+            ],
+          ),
+        )
+    );
   }
 
   Widget _buildQuizResult() {

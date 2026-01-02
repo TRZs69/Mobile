@@ -71,10 +71,17 @@ class LevelyEngine {
     int? courseId,
     int? level,
     String? chapterName,
+    String? materialSnippet,
     required List<LevelyChatMessage> history,
   }) async {
     final system = LevelyPrompt.system(appName: 'LeveLearn', assistantName: 'Levely', language: 'Indonesia');
-    final ctx = LevelyPrompt.context(courseId: courseId, level: level, chapterName: chapterName, progress: progress);
+    final ctx = LevelyPrompt.context(
+      courseId: courseId,
+      level: level,
+      chapterName: chapterName,
+      progress: progress,
+      materialSnippet: materialSnippet,
+    );
 
     // Batasi konteks percakapan agar tidak terlalu panjang.
     final recent = history.take(10).toList().reversed.toList();
@@ -99,11 +106,11 @@ class LevelyEngine {
   String _offlineAnswer(String userMessage) {
     final p = userMessage.toLowerCase();
     if (p.contains('heuristik') || p.contains('heuristics')) {
-      return "Heuristik adalah aturan praktis untuk mengevaluasi UI (misalnya Nielsen). \n- Cek feedback sistem (loading/sukses/gagal)\n- Pastikan user bisa undo\n- Gunakan istilah yang familiar\n\nTopik heuristik mana yang lagi kamu pelajari?";
+      return "Heuristik adalah aturan praktis untuk mengevaluasi UI (misalnya Nielsen). Sebutkan prinsip heuristik yang ingin kamu bahas di bab ini.";
     }
     if (p.contains('usability')) {
-      return "Usability itu seberapa mudah dan efektif user mencapai tujuan. \n- Perhatikan efektivitas (error)\n- Efisiensi (waktu)\n- Kepuasan (rating)\n\nKamu lagi ngebahas metrik usability yang mana?";
+      return "Usability adalah seberapa mudah dan efektif user mencapai tujuan. Sebutkan metrik usability yang ingin kamu bahas di bab ini.";
     }
-    return "Oke, aku bantu. \n- Jelaskan topiknya (materi apa)\n- Tulis bagian yang bikin bingung\n- Kalau ada, kirim contoh soal/kalimatnya\n\nKamu mau aku jelasin konsep atau latihan soal dulu?";
+    return "Jelaskan topik di bab ini dan bagian yang membingungkan. Jika ada, sertakan contoh soal atau kalimatnya.";
   }
 }

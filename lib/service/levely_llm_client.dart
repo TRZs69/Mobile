@@ -15,10 +15,12 @@ class LevelyLlmClient {
 class OpenAiChatCompletionsClient extends LevelyLlmClient {
   final String apiKey;
   final String model;
+  final String baseUrl;
 
   OpenAiChatCompletionsClient({
     required this.apiKey,
     this.model = 'gpt-4o-mini',
+    this.baseUrl = 'https://api.openai.com/v1/chat/completions',
   });
 
   @override
@@ -27,7 +29,7 @@ class OpenAiChatCompletionsClient extends LevelyLlmClient {
     required String context,
     required List<({String role, String content})> messages,
   }) async {
-    final uri = Uri.parse('https://api.openai.com/v1/chat/completions');
+    final uri = Uri.parse(baseUrl);
     final payload = {
       'model': model,
       'temperature': 0.3,
@@ -57,4 +59,3 @@ class OpenAiChatCompletionsClient extends LevelyLlmClient {
     return (msg['content'] as String?)?.trim() ?? '';
   }
 }
-

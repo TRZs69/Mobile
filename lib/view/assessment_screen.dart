@@ -5,15 +5,22 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
 import '../model/assessment.dart';
 import '../model/chapter_status.dart';
+import '../model/levely_models.dart';
 import '../model/user.dart';
 import '../service/chapter_service.dart';
+import '../service/levely_companion.dart';
 import '../service/user_chapter_service.dart';
 import '../service/user_service.dart';
 import '../utils/colors.dart';
+import '../view/learning_assistant_quick_ask.dart';
+import '../view/learning_assistant_screen.dart';
 
 class AssessmentScreen extends StatefulWidget {
   final ChapterStatus status;
   final Student user;
+  final int? courseId;
+  final int? level;
+  final String? chapterName;
   final Function(bool) updateMaterialLocked;
   final Function(ChapterStatus) updateStatus;
   final Function(bool) updateAssessmentStarted;
@@ -22,6 +29,9 @@ class AssessmentScreen extends StatefulWidget {
     super.key,
     required this.status,
     required this.user,
+    this.courseId,
+    this.level,
+    this.chapterName,
     required this.updateMaterialLocked,
     required this.updateStatus,
     required this.updateAssessmentStarted,
@@ -33,6 +43,7 @@ class AssessmentScreen extends StatefulWidget {
 }
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
+  final LevelyCompanion _companion = LevelyCompanion();
   bool _assessmentStarted = false;
   bool _assessmentFinished = false;
   bool tapped = false;
@@ -40,6 +51,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   bool allQuestionsAnswered = false;
   int correctAnswer = 0;
   int point = 0;
+  LevelyProgress _learningProgress = LevelyProgress.empty();
+  String? _companionFeedback;
+  bool _postAssessmentDialogShown = false;
   Student? user;
   late ChapterStatus status;
   Assessment? question;
@@ -55,7 +69,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     status = widget.status;
     user = widget.user;
     super.initState();
-
+    _loadProgress();
   }
 
   void getAssessment(int id) async {
@@ -63,6 +77,108 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     setState(() {
       question = resultAssessment;
     });
+  }
+
+  Future<void> _loadProgress() async {
+    final progress = await _companion.loadProgress();
+    if (!mounted) return;
+    setState(() {
+      _learningProgress = progress;
+    });
+  }
+
+  Future<void> _captureCompanionFeedback() async {
+    if (_companionFeedback != null) return;
+    final total = question?.questions.length ?? 0;
+    final result = await _companion.observeAssessment(
+      progress: _learningProgress,
+      correct: correctAnswer,
+      attempted: total,
+      score: point,
+      now: DateTime.now(),
+      chapterName: widget.chapterName,
+      referenceId: 'assessment:${status.chapterId}',
+    );
+    if (!mounted) return;
+    setState(() {
+      _learningProgress = result.progress;
+      _companionFeedback = result.feedback;
+    });
+  }
+
+  String _buildAssistantSummaryMessage() {
+    final feedback = _companionFeedback?.trim() ?? '';
+    if (feedback.isNotEmpty) {
+      return "$feedback\n\nMau bahas bagian mana dari hasil assessment ini?";
+    }
+    final total = question?.questions.length ?? 0;
+    final base = total > 0
+        ? "Hasil assessment: benar $correctAnswer/$total, skor $point/100."
+        : "Hasil assessment sudah selesai.";
+    return "$base Mau bahas bagian mana dari hasil assessment ini?";
+  }
+
+  Future<void> _openPostAssessmentQuickAsk() async {
+    final messages = await showLearningAssistantQuickAsk(
+      context,
+      courseId: widget.courseId,
+      level: widget.level,
+      chapterName: widget.chapterName,
+      chapterId: status.chapterId,
+      initialMessages: [
+        LevelyChatMessage.assistant(_buildAssistantSummaryMessage()),
+      ],
+    );
+    if (!mounted) return;
+    if (messages == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LearningAssistantScreen(
+          courseId: widget.courseId,
+          level: widget.level,
+          chapterName: widget.chapterName,
+          chapterId: status.chapterId,
+          initialMessages: messages,
+        ),
+      ),
+    );
+  }
+
+  void _maybeShowPostAssessmentDialog() {
+    if (!mounted || _postAssessmentDialogShown) return;
+    _postAssessmentDialogShown = true;
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(
+            'Bahas hasil assessment?',
+            style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor),
+          ),
+          content: Text(
+            'Levely bisa merangkum hasil dan bantu bahas bagian yang masih lemah.',
+            style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Nanti', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.grey.shade700)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+              onPressed: () {
+                Navigator.pop(context);
+                _openPostAssessmentQuickAsk();
+              },
+              child: Text('Next', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showFinishConfirmation() {
@@ -253,6 +369,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         widget.updateAssessmentStarted(false);
         widget.updateMaterialLocked(false);
       });
+      await _captureCompanionFeedback();
+      _maybeShowPostAssessmentDialog();
     }
   }
 
@@ -859,6 +977,22 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 ),
               ),
               SizedBox(height: 8),
+              if (_companionFeedback != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Card(
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        _companionFeedback!,
+                        style: TextStyle(fontFamily: 'DIN_Next_Rounded', height: 1.35),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+              ],
               Column(
                 children: List.generate(
                   question!.questions.length,

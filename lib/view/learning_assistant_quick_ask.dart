@@ -1,5 +1,7 @@
 import 'package:app/utils/colors.dart';
 import 'package:app/model/levely_models.dart';
+import 'package:app/service/chapter_service.dart';
+import 'package:app/service/levely_companion.dart';
 import 'package:flutter/material.dart';
 
 Future<List<LevelyChatMessage>?> showLearningAssistantQuickAsk(
@@ -7,6 +9,8 @@ Future<List<LevelyChatMessage>?> showLearningAssistantQuickAsk(
   int? courseId,
   int? level,
   String? chapterName,
+  int? chapterId,
+  List<LevelyChatMessage>? initialMessages,
 }) {
   return showModalBottomSheet<List<LevelyChatMessage>?>(
     context: context,
@@ -17,6 +21,8 @@ Future<List<LevelyChatMessage>?> showLearningAssistantQuickAsk(
         courseId: courseId,
         level: level,
         chapterName: chapterName,
+        chapterId: chapterId,
+        initialMessages: initialMessages,
       );
     },
   );
@@ -26,11 +32,15 @@ class _LearningAssistantQuickAskSheet extends StatefulWidget {
   final int? courseId;
   final int? level;
   final String? chapterName;
+  final int? chapterId;
+  final List<LevelyChatMessage>? initialMessages;
 
   const _LearningAssistantQuickAskSheet({
     this.courseId,
     this.level,
     this.chapterName,
+    this.chapterId,
+    this.initialMessages,
   });
 
   @override
@@ -38,30 +48,67 @@ class _LearningAssistantQuickAskSheet extends StatefulWidget {
 }
 
 class _LearningAssistantQuickAskSheetState extends State<_LearningAssistantQuickAskSheet> {
+  final LevelyCompanion _companion = LevelyCompanion();
   final TextEditingController _composer = TextEditingController();
   final List<LevelyChatMessage> _messages = [];
+  LevelyProgress _progress = LevelyProgress.empty();
+  String? _materialContent;
 
   @override
   void initState() {
     super.initState();
 
-    _messages.insert(
-      0,
-      LevelyChatMessage.assistant(
-        "Aku Levely. Quick Ask dulu ya—kalau perlu chat panjang klik Expand.",
-      ),
-    );
-
     final summary = _contextSummary();
     if (summary.isNotEmpty) {
       _messages.insert(0, LevelyChatMessage.assistant(summary));
     }
+
+    if (widget.initialMessages != null && widget.initialMessages!.isNotEmpty) {
+      for (final message in widget.initialMessages!.reversed) {
+        _messages.insert(0, message);
+      }
+      _loadProgress();
+      _loadMaterial();
+      return;
+    }
+
+    _messages.insert(
+      0,
+      LevelyChatMessage.assistant(
+        "Aku Levely. Quick Ask khusus untuk bab ini.",
+      ),
+    );
+
+    _loadProgress();
+    _loadMaterial();
   }
 
   @override
   void dispose() {
     _composer.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadProgress() async {
+    final progress = await _companion.loadProgress();
+    if (!mounted) return;
+    setState(() {
+      _progress = progress;
+    });
+  }
+
+  Future<void> _loadMaterial() async {
+    final chapterId = widget.chapterId;
+    if (chapterId == null) return;
+    try {
+      final material = await ChapterService.getMaterialByChapterId(chapterId);
+      if (!mounted) return;
+      setState(() {
+        _materialContent = material.content;
+      });
+    } catch (_) {
+      // Ignore material load failures; fallback to non-RAG answers.
+    }
   }
 
   String _contextSummary() {
@@ -74,34 +121,36 @@ class _LearningAssistantQuickAskSheetState extends State<_LearningAssistantQuick
     return parts.isEmpty ? "" : "Konteks: ${parts.join(" • ")}";
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _composer.text.trim();
     if (text.isEmpty) return;
 
     setState(() {
       _messages.insert(0, LevelyChatMessage.user(text));
-      _messages.insert(0, LevelyChatMessage.assistant(_stubReply(text)));
+      _messages.insert(0, LevelyChatMessage.assistant("."));
     });
 
     _composer.clear();
     FocusScope.of(context).unfocus();
+
+    final history = _messages.skip(1).toList();
+    final reply = await _companion.quickAsk(
+      prompt: text,
+      progress: _progress,
+      history: history,
+      courseId: widget.courseId,
+      level: widget.level,
+      chapterName: widget.chapterName,
+      materialContent: _materialContent,
+    );
+    if (!mounted) return;
+    setState(() {
+      _messages.removeAt(0);
+      _messages.insert(0, LevelyChatMessage.assistant(reply));
+    });
   }
 
-  String _stubReply(String prompt) {
-    final p = prompt.toLowerCase();
-    if (p.contains("ringkas") || p.contains("summary")) {
-      return "Bisa. Bagian mana yang mau diringkas?";
-    }
-    if (p.contains("contoh") || p.contains("example")) {
-      return "Oke. Sebutkan topiknya ya, nanti aku buatkan contoh singkat.";
-    }
-    if (p.contains("quiz") || p.contains("latihan")) {
-      return "Siap. Mau 5 soal atau 10 soal?";
-    }
-    return "Sip. Kalau mau lebih detail, klik Expand biar enak bacanya.";
-  }
-
-  @override
+@override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
 

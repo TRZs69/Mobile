@@ -131,13 +131,33 @@ class _ChapterScreenState extends State<Chapterscreen> with TickerProviderStateM
           _screens[index] = materialComplete
               ? widget.status.assessmentDone
               ? AlreadyFinishedAssessmentAssessmentScreen(status: widget.status, user: widget.user)
-              : AssessmentScreen(status: widget.status, user: widget.user, updateMaterialLocked: updateMaterialLocked, updateStatus: updateStatus, updateAssessmentFinished: updateAssessmentFinished, updateAssessmentStarted: updateAssessmentStarted,)
+              : AssessmentScreen(
+                  status: widget.status,
+                  user: widget.user,
+                  courseId: widget.uc.courseId,
+                  level: widget.level,
+                  chapterName: widget.chapterName,
+                  updateMaterialLocked: updateMaterialLocked,
+                  updateStatus: updateStatus,
+                  updateAssessmentFinished: updateAssessmentFinished,
+                  updateAssessmentStarted: updateAssessmentStarted,
+                )
               : _lockedContent();
           break;
         case 2:
-          _screens[index] = widget.status.assessmentDone || _assessmentFinished ?
-              AssignmentScreen(status: status, user: widget.user, uc: widget.uc, level: widget.level, chLength: widget.chLength, idBadge: widget.idBadge, updateProgress: updateProgress, updateStatus: updateStatus) :
-              _lockedAssignmentContent();
+          _screens[index] = widget.status.assessmentDone || _assessmentFinished
+              ? AssignmentScreen(
+                  status: status,
+                  user: widget.user,
+                  uc: widget.uc,
+                  level: widget.level,
+                  chapterName: widget.chapterName,
+                  chLength: widget.chLength,
+                  idBadge: widget.idBadge,
+                  updateProgress: updateProgress,
+                  updateStatus: updateStatus,
+                )
+              : _lockedAssignmentContent();
           break;
       }
     }
@@ -196,69 +216,73 @@ class _ChapterScreenState extends State<Chapterscreen> with TickerProviderStateM
               ),
             ],
           ),
-          floatingActionButton: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (_showFabHelp)
-                  GestureDetector(
-                    onTap: () => setState(() => _showFabHelp = false),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      margin: const EdgeInsets.only(right: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.12),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+          floatingActionButton: (_assessmentStarted && !_assessmentFinished)
+              ? null
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (_showFabHelp)
+                      GestureDetector(
+                        onTap: () => setState(() => _showFabHelp = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          margin: const EdgeInsets.only(right: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                            border: Border.all(color: AppColors.accentColor),
                           ),
-                        ],
-                        border: Border.all(color: AppColors.accentColor),
-                      ),
-                      child: Text(
-                        _fabHelpText,
-                        style: const TextStyle(
-                          fontFamily: 'DIN_Next_Rounded',
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
+                          child: Text(
+                            _fabHelpText,
+                            style: const TextStyle(
+                              fontFamily: 'DIN_Next_Rounded',
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black87,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                const SizedBox(height: 10),
-                FloatingActionButton(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.white,
-                  tooltip: 'Tanya Levely',
-                  onPressed: () async {
-                    setState(() => _showFabHelp = false);
-                    final messages = await showLearningAssistantQuickAsk(
-                      context,
-                      courseId: widget.uc.courseId,
-                      level: widget.level,
-                      chapterName: widget.chapterName,
-                    );
-                    if (!context.mounted) return;
-                    if (messages == null) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LearningAssistantScreen(
+                    const SizedBox(height: 10),
+                    FloatingActionButton(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      tooltip: 'Tanya Levely',
+                      onPressed: () async {
+                        setState(() => _showFabHelp = false);
+                        final messages = await showLearningAssistantQuickAsk(
+                          context,
                           courseId: widget.uc.courseId,
                           level: widget.level,
                           chapterName: widget.chapterName,
-                          initialMessages: messages,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Icon(Icons.smart_toy_outlined),
+                          chapterId: widget.status.chapterId,
+                        );
+                        if (!context.mounted) return;
+                        if (messages == null) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LearningAssistantScreen(
+                              courseId: widget.uc.courseId,
+                              level: widget.level,
+                              chapterName: widget.chapterName,
+                              chapterId: widget.status.chapterId,
+                              initialMessages: messages,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Icon(Icons.smart_toy_outlined),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         )
     );

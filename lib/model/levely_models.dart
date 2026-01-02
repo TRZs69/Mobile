@@ -10,6 +10,78 @@ class LevelyChatMessage {
   factory LevelyChatMessage.assistant(String text) => LevelyChatMessage._(false, text);
 }
 
+enum LevelyLearningEventType { quiz, assessment, assignment }
+
+class LevelyLearningEvent {
+  final LevelyLearningEventType type;
+  final String? topic;
+  final int? correct;
+  final int? attempted;
+  final int? score;
+  final String? referenceId;
+  final DateTime at;
+
+  const LevelyLearningEvent({
+    required this.type,
+    this.topic,
+    this.correct,
+    this.attempted,
+    this.score,
+    this.referenceId,
+    required this.at,
+  });
+
+  double? get accuracy => attempted == null || attempted == 0 ? null : (correct ?? 0) / attempted!;
+
+  Map<String, dynamic> toJson() => {
+        'type': type.name,
+        'topic': topic,
+        'correct': correct,
+        'attempted': attempted,
+        'score': score,
+        'referenceId': referenceId,
+        'at': at.toIso8601String(),
+      };
+
+  factory LevelyLearningEvent.fromJson(Map<String, dynamic> json) {
+    return LevelyLearningEvent(
+      type: LevelyLearningEventType.values.byName(json['type'] as String),
+      topic: json['topic'] as String?,
+      correct: (json['correct'] as num?)?.toInt(),
+      attempted: (json['attempted'] as num?)?.toInt(),
+      score: (json['score'] as num?)?.toInt(),
+      referenceId: json['referenceId'] as String?,
+      at: DateTime.parse(json['at'] as String),
+    );
+  }
+}
+
+class LevelyTrendPoint {
+  final LevelyLearningEventType type;
+  final double value;
+  final DateTime at;
+
+  const LevelyTrendPoint({
+    required this.type,
+    required this.value,
+    required this.at,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'type': type.name,
+        'value': value,
+        'at': at.toIso8601String(),
+      };
+
+  factory LevelyTrendPoint.fromJson(Map<String, dynamic> json) {
+    return LevelyTrendPoint(
+      type: LevelyLearningEventType.values.byName(json['type'] as String),
+      value: (json['value'] as num).toDouble(),
+      at: DateTime.parse(json['at'] as String),
+    );
+  }
+}
+
 enum QuizDifficulty { easy, medium, hard }
 
 enum LevelyBadgeId {
@@ -117,6 +189,10 @@ class LevelyProgress {
   final DateTime? lastActiveDate;
   final Map<String, TopicProgress> topics;
   final Set<LevelyBadgeId> badges;
+  final List<LevelyLearningEvent> history;
+  final List<LevelyTrendPoint> trend;
+  final String? lastFeedback;
+  final DateTime? lastFeedbackAt;
 
   const LevelyProgress({
     required this.points,
@@ -126,6 +202,10 @@ class LevelyProgress {
     required this.lastActiveDate,
     required this.topics,
     required this.badges,
+    required this.history,
+    required this.trend,
+    required this.lastFeedback,
+    required this.lastFeedbackAt,
   });
 
   factory LevelyProgress.empty() => LevelyProgress(
@@ -136,9 +216,14 @@ class LevelyProgress {
         lastActiveDate: null,
         topics: const {},
         badges: const {},
+        history: const [],
+        trend: const [],
+        lastFeedback: null,
+        lastFeedbackAt: null,
       );
 
   double get accuracy => attemptedTotal == 0 ? 0 : (correctTotal / attemptedTotal);
+  List<String> get topicsAttempted => topics.keys.toList();
 
   TopicProgress topicOrDefault(String topic) {
     return topics[topic] ??
@@ -160,6 +245,10 @@ class LevelyProgress {
     DateTime? lastActiveDate,
     Map<String, TopicProgress>? topics,
     Set<LevelyBadgeId>? badges,
+    List<LevelyLearningEvent>? history,
+    List<LevelyTrendPoint>? trend,
+    String? lastFeedback,
+    DateTime? lastFeedbackAt,
   }) {
     return LevelyProgress(
       points: points ?? this.points,
@@ -169,6 +258,10 @@ class LevelyProgress {
       lastActiveDate: lastActiveDate ?? this.lastActiveDate,
       topics: topics ?? this.topics,
       badges: badges ?? this.badges,
+      history: history ?? this.history,
+      trend: trend ?? this.trend,
+      lastFeedback: lastFeedback ?? this.lastFeedback,
+      lastFeedbackAt: lastFeedbackAt ?? this.lastFeedbackAt,
     );
   }
 
@@ -180,6 +273,10 @@ class LevelyProgress {
         'lastActiveDate': lastActiveDate?.toIso8601String(),
         'topics': topics.map((k, v) => MapEntry(k, v.toJson())),
         'badges': badges.map((b) => b.name).toList(),
+        'history': history.map((e) => e.toJson()).toList(),
+        'trend': trend.map((e) => e.toJson()).toList(),
+        'lastFeedback': lastFeedback,
+        'lastFeedbackAt': lastFeedbackAt?.toIso8601String(),
       };
 
   String toJsonString() => jsonEncode(toJson());
@@ -192,6 +289,14 @@ class LevelyProgress {
     }
     final rawBadges = (json['badges'] as List?)?.cast<dynamic>() ?? const [];
     final badges = rawBadges.map((e) => LevelyBadgeId.values.byName(e as String)).toSet();
+    final rawHistory = (json['history'] as List?)?.cast<dynamic>() ?? const [];
+    final history = rawHistory
+        .map((e) => LevelyLearningEvent.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+    final rawTrend = (json['trend'] as List?)?.cast<dynamic>() ?? const [];
+    final trend = rawTrend
+        .map((e) => LevelyTrendPoint.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
 
     return LevelyProgress(
       points: (json['points'] as num?)?.toInt() ?? 0,
@@ -201,6 +306,10 @@ class LevelyProgress {
       lastActiveDate: json['lastActiveDate'] == null ? null : DateTime.parse(json['lastActiveDate'] as String),
       topics: topics,
       badges: badges,
+      history: history,
+      trend: trend,
+      lastFeedback: json['lastFeedback'] as String?,
+      lastFeedbackAt: json['lastFeedbackAt'] == null ? null : DateTime.parse(json['lastFeedbackAt'] as String),
     );
   }
 
