@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'dart:math' as math;
+
 import 'package:app/model/assessment.dart';
 import 'package:app/model/chapter_status.dart';
 import 'package:app/model/user.dart';
@@ -35,6 +37,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   late ChapterStatus status;
   Assessment? question;
   Future<bool>? _resultFuture;
+  Map<int, int> _gamificationPoints = {};
 
   @override
   void initState() {
@@ -185,6 +188,13 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
       }
     }
 
+    int totalEarned = status.assessmentPointsEarned;
+    double totalWeight = 0;
+    List<double> weights = List.filled(questions.length, 0.0);
+    
+    int currentUserElo = widget.user.elo ?? 800;
+    if (currentUserElo < 800) currentUserElo = 800;
+
     for (int i = 0; i < questions.length; i++) {
       final current = questions[i];
       if (current.type == 'EY') {
@@ -204,9 +214,37 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
           current.score = rangeScore;
         }
         correctAnswer++;
+        
+        int qElo = current.elo ?? 800;
+        double expectedProb = 1 / (1 + math.pow(10, -(currentUserElo - qElo) / 400));
+        double w = 1 - expectedProb;
+        weights[i] = w;
+        totalWeight += w;
       } else {
         current.score = 0;
       }
+    }
+    
+    int distributedPoints = 0;
+    _gamificationPoints.clear();
+    for (int i = 0; i < questions.length; i++) {
+        if (questions[i].isCorrect && totalWeight > 0) {
+            int pts = ((totalEarned * weights[i]) / totalWeight).round();
+            _gamificationPoints[i] = pts;
+            distributedPoints += pts;
+        } else {
+            _gamificationPoints[i] = 0;
+        }
+    }
+    
+    if (totalWeight > 0 && distributedPoints != totalEarned) {
+        int diff = totalEarned - distributedPoints;
+        for (int i = 0; i < questions.length; i++) {
+            if (questions[i].isCorrect) {
+                _gamificationPoints[i] = (_gamificationPoints[i] ?? 0) + diff;
+                break;
+            }
+        }
     }
 
     // Score must reflect objective questions only and ignore essay.
@@ -302,11 +340,23 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.all(0),
-                                    child: Text('Info Poin', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
+                                    child: Text('Pertambahan Elo', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(0),
                                     child: Text(': ${status.assessmentEloDelta > 0 ? "+" : ""}${status.assessmentEloDelta}', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                              TableRow(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(0),
+                                    child: Text('Poin Didapat', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(0),
+                                    child: Text(': ${status.assessmentPointsEarned > 0 ? "+" : ""}${status.assessmentPointsEarned}', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.amber.shade200)),
                                   ),
                                 ],
                               ),
@@ -360,17 +410,43 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                     ),
                   ),
                   SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.amber.shade400)
-                    ),
-                    child: Text(
-                      '${question?.questions[number].elo} ELO', 
-                      style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', fontSize: 12)
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.shade400)
+                        ),
+                        child: Text(
+                          '${question?.questions[number].elo} ELO',
+                          style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', fontSize: 12)
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Builder(builder: (_) {
+                        final pts = _gamificationPoints[number] ?? 0;
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: pts > 0 ? Colors.green.shade50 : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: pts > 0 ? Colors.green.shade400 : Colors.grey.shade300)
+                          ),
+                          child: Text(
+                            pts > 0 ? '+$pts Poin' : '0 Poin',
+                            style: TextStyle(
+                              color: pts > 0 ? Colors.green.shade800 : Colors.grey.shade600,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'DIN_Next_Rounded',
+                              fontSize: 12
+                            )
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ],
               ),
@@ -402,17 +478,40 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                     ),
                   ),
                   SizedBox(width: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.amber.shade400)
-                    ),
-                    child: Text(
-                      '${question?.questions[number].elo} ELO', 
-                      style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', fontSize: 12)
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.shade400)
+                        ),
+                        child: Text(
+                          '${question?.questions[number].elo} ELO',
+                          style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', fontSize: 12)
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.orange.shade300)
+                        ),
+                        child: Text(
+                          'Essay',
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'DIN_Next_Rounded',
+                            fontSize: 12
+                          )
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

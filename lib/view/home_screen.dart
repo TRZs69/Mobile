@@ -902,48 +902,88 @@ class _HomeState extends State<HomeScreen> {
                     ],
                   ),
                   SizedBox(height: 24),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.start, // Menyusun elemen ke kiri
-                        crossAxisAlignment:
-                        CrossAxisAlignment.center, // Vertikal rata tengah
-                        children: [
-                          Icon(
-                            LineAwesomeIcons
-                                .gem_solid, // Icon yang ingin ditampilkan
-                            color: AppColors.accentColor, // Warna icon
-                            size: 24, // Ukuran icon
-                          ),
-                          SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Total Poin', // Teks yang ingin ditampilkan
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge!
-                                    .copyWith(
-                                  // fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontFamily:
-                                  'DIN_Next_Rounded', // Ganti dengan font yang diinginkan
-                                ),
-                              ),
-                              Text("${user?.points ?? 0}",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge!
-                                      .copyWith(
-                                      fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LineAwesomeIcons.gem_solid,
+                              color: AppColors.accentColor,
+                              size: 24,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Total Poin',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
                                       color: Colors.white,
-                                      fontFamily: 'DIN_Next_Rounded'))
-                            ],
-                          ) // Jarak antara icon dan text
-                        ],
+                                      fontFamily: 'DIN_Next_Rounded',
+                                    ),
+                                  ),
+                                  Text("${user?.points ?? 0}",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          fontFamily: 'DIN_Next_Rounded'))
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LineAwesomeIcons.star_solid,
+                              color: AppColors.accentColor,
+                              size: 24,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Rating ELO',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                                      color: Colors.white,
+                                      fontFamily: 'DIN_Next_Rounded',
+                                    ),
+                                  ),
+                                  Text("${user?.elo ?? 0}",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          fontFamily: 'DIN_Next_Rounded'))
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(),
                       ),
                     ],
                   ),
