@@ -639,6 +639,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         iconTheme: const IconThemeData(color: AppColors.appBarIconColor),
+        leading: Builder(
+          builder: (context) {
+            if (Navigator.canPop(context)) {
+              return IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.appBarIconColor),
+                onPressed: () => Navigator.pop(context),
+              );
+            }
+            return IconButton(
+              icon: const Icon(Icons.menu, color: AppColors.appBarIconColor),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            );
+          },
+        ),
         title: const Text('Levely Chat', style: TextStyle(color: AppColors.appBarIconColor)),
         centerTitle: true,
         actions: [

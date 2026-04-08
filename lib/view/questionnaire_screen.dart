@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app/utils/colors.dart';
+import 'package:app/service/evaluation_service.dart';
 
 class QuestionnaireScreen extends StatefulWidget {
   const QuestionnaireScreen({super.key});
@@ -11,16 +12,39 @@ class QuestionnaireScreen extends StatefulWidget {
 class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  // Questions based on LLM-as-a-judge / Human Scoring concepts
+  bool _isLoadingStatus = true;
+  bool _hasSubmitted = false;
+  bool _isSubmitting = false;
+
+  // Questions based on SDT (Evaluasi Bab 8)
   final List<String> _likertQuestions = [
-    "Seberapa relevan respon chatbot dengan instruksi/pertanyaan Anda? (Relevance)",
-    "Seberapa akurat informasi yang diberikan oleh chatbot? (Accuracy)",
-    "Seberapa jelas dan mudah dipahami gaya bahasa chatbot? (Clarity)",
-    "Seberapa terbantunya Anda oleh chatbot dalam memahami materi? (Helpfulness)",
+    "Saya merasa memiliki kendali atas cara saya belajar (Autonomy)",
+    "Tantangan soal terasa sesuai dengan kemampuan saya (Competence)",
+    "Saya merasa berkembang setelah menggunakan LeveLearn (Competence)",
+    "Berinteraksi dengan Levely membuat saya lebih terhubung dengan materi (Relatedness)",
+    "Saya aktif menyelesaikan materi dan soal di LeveLearn (Behavioral Engagement)",
+    "Saya berpikir lebih dalam tentang materi saat menggunakan LeveLearn (Cognitive Engagement)",
+    "Saya menikmati pengalaman belajar di LeveLearn (Emotional Engagement)",
+    "Chatbot AI dan gamifikasi adaptif membantu saya belajar lebih baik (Overall)"
   ];
 
   final Map<int, int> _likertAnswers = {};
-  String _essayFeedback = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  Future<void> _checkStatus() async {
+    final status = await EvaluationService.checkHasSubmitted();
+    if (mounted) {
+      setState(() {
+        _hasSubmitted = status;
+        _isLoadingStatus = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +61,19 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: ListView.builder(
-              itemCount: _likertQuestions.length + 2, // Likert + Essay + Submit
-              itemBuilder: (context, index) {
+        child: _isLoadingStatus
+            ? const Center(child: CircularProgressIndicator())
+            : _hasSubmitted
+                ? _buildAlreadySubmitted()
+                : Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: ListView.builder(
+                        itemCount: _likertQuestions.length + 1, // Likert + Submit
+                        itemBuilder: (context, index) {
                 // Submit Button
-                if (index == _likertQuestions.length + 1) {
+                if (index == _likertQuestions.length) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24.0),
                     child: ElevatedButton(
@@ -53,9 +81,8 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                         backgroundColor: AppColors.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      onPressed: () {
+                      onPressed: _isSubmitting ? null : () async {
                         if (_formKey.currentState!.validate()) {
-                          // Validate that all Likert scales are answered
                           if (_likertAnswers.length < _likertQuestions.length) {
                              ScaffoldMessenger.of(context).showSnackBar(
                                const SnackBar(content: Text('Mohon isi semua pertanyaan pilihan 1-5.', style: TextStyle(fontFamily: 'DIN_Next_Rounded'))),
@@ -63,53 +90,43 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                              return;
                           }
                           _formKey.currentState!.save();
-                          // Handle submission logic here
-                          _showSuccessDialog();
+                          
+                          setState(() {
+                            _isSubmitting = true;
+                          });
+
+                          // Map answers to backend keys q1...q8
+                          Map<String, int> payload = {};
+                          for (int i = 0; i < 8; i++) {
+                            payload['q${i + 1}'] = _likertAnswers[i]!;
+                          }
+
+                          bool success = await EvaluationService.submitQuestionnaire(payload);
+                          
+                          setState(() {
+                            _isSubmitting = false;
+                          });
+
+                          if (success) {
+                            _showSuccessDialog();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Gagal mengirimkan evaluasi. Silakan coba lagi.', style: TextStyle(fontFamily: 'DIN_Next_Rounded'))),
+                            );
+                          }
                         }
                       },
-                      child: const Text(
-                        'Submit Evaluasi',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontFamily: 'DIN_Next_Rounded',
-                          fontWeight: FontWeight.bold
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
-                // Essay Question (Optional Feedback)
-                if (index == _likertQuestions.length) {
-                   return Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Kritik & Saran Tambahan (Opsional)",
+                      child: _isSubmitting 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text(
+                            'Submit Evaluasi',
                             style: TextStyle(
+                              color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
                               fontFamily: 'DIN_Next_Rounded',
+                              fontWeight: FontWeight.bold
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            decoration: const InputDecoration(
-                              hintText: 'Tuliskan kesan atau saran Anda terkait performa chatbot...',
-                              border: OutlineInputBorder(),
-                            ),
-                            maxLines: 3,
-                            onSaved: (value) {
-                              _essayFeedback = value ?? '';
-                            },
-                          ),
-                        ],
-                      ),
                     ),
                   );
                 }
@@ -207,7 +224,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Terima Kasih!', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
         content: const Text(
-          'Evaluasi Anda telah kami terima. Terima kasih telah membantu penilaian performa chatbot!',
+          'Evaluasi Anda telah kami terima. Terima kasih telah membantu penilaian LeveLearn!',
           style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
         ),
         actions: [
@@ -219,6 +236,50 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
             child: const Text('Tutup', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAlreadySubmitted() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_outline, size: 80, color: AppColors.primaryColor),
+            const SizedBox(height: 24),
+            const Text(
+              'Terima Kasih!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'DIN_Next_Rounded',
+                color: AppColors.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Anda sudah memberikan respon evaluasi ini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontFamily: 'DIN_Next_Rounded',
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Kembali', style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold)),
+            )
+          ],
+        ),
       ),
     );
   }

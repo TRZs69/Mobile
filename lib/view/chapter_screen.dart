@@ -194,6 +194,15 @@ class _ChapterScreenState extends State<Chapterscreen>
           appBar: AppBar(
             automaticallyImplyLeading: false,
             backgroundColor: AppColors.primaryColor,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                Navigator.pop(context, {
+                  'status': status.toJson(),
+                  'index': widget.chapterIndexInList,
+                });
+              },
+            ),
             title: Text(widget.chapterName,
                 style: TextStyle(
                     color: Colors.white,

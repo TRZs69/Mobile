@@ -496,6 +496,12 @@ class _CourseDetail extends State<CourseDetailScreen> {
                 appBar: AppBar(
                   automaticallyImplyLeading: false,
                   centerTitle: true,
+                  leading: Navigator.canPop(context)
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      : null,
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
