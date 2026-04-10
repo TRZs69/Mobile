@@ -657,6 +657,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.history, color: AppColors.appBarIconColor),
+            tooltip: 'Chat History',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.appBarIconColor),
             tooltip: 'Refresh Sessions',
             onPressed: _fetchSessions,

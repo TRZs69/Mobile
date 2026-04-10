@@ -5,6 +5,8 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
+import '../global_var.dart';
+import '../service/api_cache_service.dart';
 import 'friends_screen.dart';
 import 'home_screen.dart';
 import 'mycourse_screen.dart';
@@ -35,6 +37,7 @@ class _MainState extends State<Mainscreen> {
   int _tutorialStepIndex = 0;
   int _courseRefreshNonce = 0;
   int _profileTutorialReplayNonce = 0;
+  Timer? _heartbeatTimer;
 
   final List<_TutorialStep> _tutorialSteps = const [
     _TutorialStep(
@@ -95,10 +98,42 @@ class _MainState extends State<Mainscreen> {
 
     getCourseDetail();
     _maybeStartMainTutorial();
+    _startHeartbeat();
+  }
+
+  Future<void> _startHeartbeat() async {
+    final sessionId = pref.getInt('sessionId');
+    final token = pref.getString('token');
+    
+    if (sessionId == null || token == null) return;
+
+    // Call heartbeat immediately
+    await _sendHeartbeat(sessionId, token);
+
+    // Set up timer to call every 10 minutes
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 10), (timer) async {
+      await _sendHeartbeat(sessionId, token);
+    });
+  }
+
+  Future<void> _sendHeartbeat(int sessionId, String token) async {
+    try {
+      final response = await ApiCacheService.post(
+        Uri.parse('${GlobalVar.baseUrl}/evaluation/session/heartbeat'),
+        body: {'sessionId': sessionId},
+      );
+      
+      if (response.statusCode != 204) {
+        print('Heartbeat failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Heartbeat error: $e');
+    }
   }
 
   @override
   void dispose() {
+    _heartbeatTimer?.cancel();
     super.dispose();
   }
 

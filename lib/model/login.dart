@@ -15,11 +15,11 @@ class Login{
 
   factory Login.fromJson(Map<String, dynamic> json) {
     return Login(
-      id: json['id'],
-      name: json['name'],
-      role: json['role'],
+      id: json['data']['id'],
+      name: json['data']['name'],
+      role: json['data']['role'],
       token: json['token'],
-      sessionId: json['sessionId'],
+      sessionId: json['data']['sessionId'],
     );
   }
 }

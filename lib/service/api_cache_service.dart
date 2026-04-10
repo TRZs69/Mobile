@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,6 +21,25 @@ class ApiCacheService {
     for (final key in keysToDelete) {
       await prefs.remove(key);
     }
+  }
+
+  static Future<Map<String, String>> _getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  static Future<void> _handle401Error() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('userId');
+    await prefs.remove('name');
+    await prefs.remove('role');
+    await prefs.remove('sessionId');
+    // Navigation to login screen should be handled by the calling widget
   }
 
   static Future<http.Response> forceRefresh(
@@ -61,7 +80,15 @@ class ApiCacheService {
       required SharedPreferences prefs, 
       required String cacheKey}
   ) async {
-    final response = await http.get(url, headers: headers);
+    final authHeaders = await _getAuthHeaders();
+    final allHeaders = {...authHeaders, ...?headers};
+    final response = await http.get(url, headers: allHeaders);
+    
+    // Handle 401 errors
+    if (response.statusCode == 401) {
+      await _handle401Error();
+    }
+    
     if (response.statusCode >= 200 && response.statusCode < 300) {
       await prefs.setString(cacheKey, response.body);
     }
@@ -96,4 +123,15 @@ class ApiCacheService {
 
     return _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey);
   }
-}
+  static Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body}) async {
+    final authHeaders = await _getAuthHeaders();
+    final allHeaders = {...authHeaders, ...?headers};
+    final response = await http.post(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null);
+    
+    // Handle 401 errors
+    if (response.statusCode == 401) {
+      await _handle401Error();
+    }
+    
+    return response;
+  }}
