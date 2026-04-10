@@ -639,30 +639,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         iconTheme: const IconThemeData(color: AppColors.appBarIconColor),
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (Navigator.canPop(context))
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.appBarIconColor),
-                onPressed: () => Navigator.pop(context),
-              ),
-            Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu, color: AppColors.appBarIconColor),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-          ],
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: AppColors.appBarIconColor),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
         title: const Text('Levely Chat', style: TextStyle(color: AppColors.appBarIconColor)),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: AppColors.appBarIconColor),
-            tooltip: 'Chat History',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.appBarIconColor),
             tooltip: 'Refresh Sessions',
