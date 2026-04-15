@@ -332,7 +332,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(0),
-                                    child: Text(': $point / ${((question!.questions.length/question!.questions.length)*100).toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
+                                    child: Text(': $point / 100', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
                                   ),
                                 ],
                               ),
