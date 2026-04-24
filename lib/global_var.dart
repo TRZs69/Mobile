@@ -22,7 +22,7 @@ class GlobalVar {
       return envBaseUrl;
     }
 
-    return 'https://backend-65ah.vercel.app/api';
+    return 'https://backend-render-proxy.onrender.com/api';
   }
 }
 
