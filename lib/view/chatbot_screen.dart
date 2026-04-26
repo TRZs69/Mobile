@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_client_sse/constants/sse_request_type_enum.dart';
+import 'package:flutter_client_sse/flutter_client_sse.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:app/global_var.dart';
 import 'package:app/utils/colors.dart';
@@ -353,27 +357,27 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         _streamHasProducedContent = false;
         _currentPlaceholder = null;
       });
-    } on _PartialStreamResult catch (result) {
-      // Koneksi putus tapi sudah ada sebagian konten — tampilkan apa yang ada
-      if (!mounted) return;
-      final partial = result.partial.trim();
-      final finalReply = partial.isNotEmpty ? partial : _fallbackAssistantReply;
-      setState(() {
-        _messages[assistantIndex] = ChatMessage(content: finalReply, isUser: false);
-        _addToHistory(isUser: false, content: finalReply);
-        _activeStreamIndex = null;
-        _streamHasProducedContent = false;
-        _currentPlaceholder = null;
-      });
     } catch (error) {
       if (!mounted) return;
-      final message = 'Terjadi kesalahan: ${error.toString()}';
-      setState(() {
-        _messages[assistantIndex] = ChatMessage(content: message, isUser: false);
-        _activeStreamIndex = null;
-        _streamHasProducedContent = false;
-        _currentPlaceholder = null;
-      });
+      if (error is _PartialStreamResult) {
+        final partial = error.partial.trim();
+        final finalReply = partial.isNotEmpty ? partial : _fallbackAssistantReply;
+        setState(() {
+          _messages[assistantIndex] = ChatMessage(content: finalReply, isUser: false);
+          _addToHistory(isUser: false, content: finalReply);
+          _activeStreamIndex = null;
+          _streamHasProducedContent = false;
+          _currentPlaceholder = null;
+        });
+      } else {
+        final message = 'Terjadi kesalahan: ${error.toString()}';
+        setState(() {
+          _messages[assistantIndex] = ChatMessage(content: message, isUser: false);
+          _activeStreamIndex = null;
+          _streamHasProducedContent = false;
+          _currentPlaceholder = null;
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -381,6 +385,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           if (_activeStreamIndex == assistantIndex) {
             _activeStreamIndex = null;
             _currentPlaceholder = null;
+            _streamHasProducedContent = false;
           }
         });
       }
@@ -394,72 +399,43 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     required String prompt,
     required int assistantIndex,
   }) async {
-    final body = jsonEncode({
+    final Map<String, dynamic> body = {
       'message': prompt,
       'history': _history,
       'sessionId': _sessionId,
       'userId': _userId,
       if (widget.materialId != null) 'materialId': widget.materialId,
       if (widget.chapterId != null) 'chapterId': widget.chapterId,
-    });
+    };
 
-    final client = http.Client();
+    final completer = Completer<String>();
     String replyBuffer = '';
-
-    try {
-      final streamUri = Uri.parse('${GlobalVar.baseUrl}/chat/stream');
-      final request = http.Request('POST', streamUri)
-        ..headers['Content-Type'] = 'application/json'
-        ..body = body;
-
-      final response = await client.send(request);
-
-      if (response.statusCode != 200) {
-        throw Exception('Gagal menghubungi server (${response.statusCode})');
-      }
-
-      final contentType = response.headers['content-type'] ?? '';
-
-      // Jika server kirim response biasa (bukan SSE)
-      if (!contentType.toLowerCase().contains('text/event-stream')) {
-        final bodyText = await response.stream.bytesToString();
-        if (bodyText.isEmpty) return '';
-        final parsed = jsonDecode(bodyText) as Map<String, dynamic>;
-        final reply = (parsed['reply'] ?? '').toString();
-        final sessionValue = parsed['sessionId']?.toString();
-        if (sessionValue != null && sessionValue.isNotEmpty) {
-          await _persistSessionId(sessionValue, skipFetch: true);
+    
+    final streamUri = '${GlobalVar.baseUrl}/chat/stream';
+    
+    SSEClient.subscribeToSSE(
+      method: SSERequestType.POST,
+      url: streamUri,
+      header: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+      body: body,
+    ).listen(
+      (event) async {
+        if (event.data == null || event.data!.isEmpty) return;
+        if (event.data == '[DONE]') {
+          if (!completer.isCompleted) completer.complete(replyBuffer);
+          return;
         }
-        return reply;
-      }
 
-      final lineStream = response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter());
-
-      try {
-        await for (final rawLine in lineStream) {
-          final trimmedLine = rawLine.trim();
-          if (trimmedLine.isEmpty || !trimmedLine.startsWith('data:')) continue;
-          final dataPayload = trimmedLine.substring(5).trim();
-          if (dataPayload.isEmpty) continue;
-          if (dataPayload == '[DONE]') break;
-
-          Map<String, dynamic> payload;
-          try {
-            payload = jsonDecode(dataPayload) as Map<String, dynamic>;
-          } catch (_) {
-            continue;
+        try {
+          final payload = jsonDecode(event.data!) as Map<String, dynamic>;
+          
+          if (payload['error'] != null) {
+            if (!completer.isCompleted) completer.completeError(payload['error']);
+            return;
           }
-
-          final errorPayload = payload['error'];
-          if (errorPayload != null) throw Exception(errorPayload.toString());
-
-          final titleDelta = payload['titleDelta']?.toString();
-          if (titleDelta != null && titleDelta.isNotEmpty) _updateSessionTitleStream(titleDelta);
-
-          final titleValue = payload['title']?.toString();
-          if (titleValue != null && titleValue.isNotEmpty) _updateSessionTitleFinal(titleValue);
 
           final delta = payload['delta']?.toString();
           if (delta != null && delta.isNotEmpty) {
@@ -473,48 +449,41 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             _updateAssistantMessage(assistantIndex, replyBuffer);
           }
 
+          final titleDelta = payload['titleDelta']?.toString();
+          if (titleDelta != null && titleDelta.isNotEmpty) {
+            _updateSessionTitleStream(titleDelta);
+          }
+
+          final titleValue = payload['title']?.toString();
+          if (titleValue != null && titleValue.isNotEmpty) {
+            _updateSessionTitleFinal(titleValue);
+          }
+
           final sessionValue = payload['sessionId']?.toString();
           if (sessionValue != null && sessionValue.isNotEmpty) {
             await _persistSessionId(sessionValue, skipFetch: true);
           }
+        } catch (e) {
+          // Skip invalid JSON chunks (like heartbeats)
         }
-      } on Exception catch (e) {
-        final errMsg = e.toString();
-        final isConnectionClosed = errMsg.contains('Connection closed') ||
-            errMsg.contains('ClientException') ||
-            errMsg.contains('SocketException') ||
-            errMsg.contains('Connection reset');
-
-        if (isConnectionClosed) {
-          if (replyBuffer.trim().isNotEmpty) {
-            throw _PartialStreamResult(replyBuffer);
-          }
-          return await _fallbackNonStream(prompt: prompt, bodyJson: body);
+      },
+      onError: (error) {
+        if (replyBuffer.isNotEmpty) {
+          if (!completer.isCompleted) completer.completeError(_PartialStreamResult(replyBuffer));
+        } else {
+          if (!completer.isCompleted) completer.completeError(error);
         }
-        rethrow;
-      }
+      },
+      onDone: () {
+        if (!completer.isCompleted) completer.complete(replyBuffer);
+      },
+      cancelOnError: true,
+    );
 
-      return replyBuffer;
-    } on _PartialStreamResult {
-      rethrow;
-    } on Exception catch (e) {
-      final errMsg = e.toString();
-      final isConnectionClosed = errMsg.contains('Connection closed') ||
-          errMsg.contains('ClientException') ||
-          errMsg.contains('SocketException') ||
-          errMsg.contains('Connection reset');
-
-      if (isConnectionClosed) {
-        if (replyBuffer.trim().isNotEmpty) {
-          throw _PartialStreamResult(replyBuffer);
-        }
-        // Fallback ke non-stream
-        return await _fallbackNonStream(prompt: prompt, bodyJson: body);
-      }
-      rethrow;
-    } finally {
-      client.close();
-    }
+    return completer.future.timeout(const Duration(minutes: 2), onTimeout: () {
+      if (replyBuffer.isNotEmpty) return replyBuffer;
+      throw TimeoutException('Koneksi terputus (Timeout)');
+    });
   }
 
   /// Fallback endpoint non-stream: POST /chat (bukan /chat/stream)
@@ -636,13 +605,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ),
         title: const Text('Levely Chat', style: TextStyle(color: AppColors.appBarIconColor)),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.appBarIconColor),
-            tooltip: 'Refresh Sessions',
-            onPressed: _fetchSessions,
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -698,10 +660,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                                   height: 1.4,
                                 ),
                               )
-                              : _FormattedMessage(
-                                text: message.content,
-                                color: textColor,
-                              ),
+                              : MarkdownBody(
+                                  data: message.content,
+                                  styleSheet: MarkdownStyleSheet(
+                                    p: TextStyle(
+                                      color: textColor,
+                                      fontFamily: 'DIN_Next_Rounded',
+                                      height: 1.4,
+                                    ),
+                                    code: const TextStyle(
+                                      backgroundColor: Colors.black12,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ),
                             if (!message.isUser &&
                                 index == _activeStreamIndex &&
                                 !_streamHasProducedContent)
@@ -942,217 +914,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 }
 
-class _FormattedMessage extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _FormattedMessage({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final blocks = _parseBlocks(text);
-    final baseStyle =
-        TextStyle(color: color, fontFamily: 'DIN_Next_Rounded', height: 1.4);
-
-    if (blocks.isEmpty) {
-      return Text(text, style: baseStyle);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (int i = 0; i < blocks.length; i++) ...[
-          _buildBlock(blocks[i], baseStyle),
-          if (i < blocks.length - 1) const SizedBox(height: 6),
-        ]
-      ],
-    );
-  }
-
-  static Widget _buildBlock(_TextBlock block, TextStyle baseStyle) {
-    switch (block.type) {
-      case _BlockType.heading:
-        return Text.rich(
-          TextSpan(
-            style: baseStyle.copyWith(fontWeight: FontWeight.w700),
-            children: _buildInlineSpans(
-                block.text, baseStyle.copyWith(fontWeight: FontWeight.w700)),
-          ),
-        );
-      case _BlockType.bullet:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('•', style: baseStyle),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                    style: baseStyle,
-                    children: _buildInlineSpans(block.text, baseStyle)),
-              ),
-            ),
-          ],
-        );
-      case _BlockType.numbered:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(block.prefix ?? '', style: baseStyle),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                    style: baseStyle,
-                    children: _buildInlineSpans(block.text, baseStyle)),
-              ),
-            ),
-          ],
-        );
-      case _BlockType.paragraph:
-      default:
-        return Text.rich(
-          TextSpan(
-              style: baseStyle,
-              children: _buildInlineSpans(block.text, baseStyle)),
-        );
-    }
-  }
-
-  static List<_TextBlock> _parseBlocks(String raw) {
-    final normalized = raw.replaceAll('\r\n', '\n');
-    final lines = normalized.split('\n');
-    final blocks = <_TextBlock>[];
-    final buffer = StringBuffer();
-
-    void flushBuffer() {
-      if (buffer.isEmpty) {
-        return;
-      }
-      final paragraph = buffer.toString().trim();
-      if (paragraph.isNotEmpty) {
-        blocks.add(_TextBlock(_BlockType.paragraph, paragraph));
-      }
-      buffer.clear();
-    }
-
-    for (final rawLine in lines) {
-      final line = rawLine.trim();
-      if (line.isEmpty) {
-        flushBuffer();
-        continue;
-      }
-
-      final bulletMatch = RegExp(r'^[-*+•]\s+(.*)$').firstMatch(line);
-      if (bulletMatch != null) {
-        flushBuffer();
-        blocks.add(_TextBlock(_BlockType.bullet, bulletMatch.group(1)!.trim()));
-        continue;
-      }
-
-      final numberMatch = RegExp(r'^(\d+)[\.)]\s+(.*)$').firstMatch(line);
-      if (numberMatch != null) {
-        flushBuffer();
-        blocks.add(_TextBlock(
-          _BlockType.numbered,
-          numberMatch.group(2)!.trim(),
-          prefix: '${numberMatch.group(1)}.',
-        ));
-        continue;
-      }
-
-      final hashHeading = RegExp(r'^#{1,6}\s+(.*)$').firstMatch(line);
-      if (hashHeading != null) {
-        flushBuffer();
-        blocks
-            .add(_TextBlock(_BlockType.heading, hashHeading.group(1)!.trim()));
-        continue;
-      }
-
-      final strongHeading = RegExp(r'^\*\*(.+)\*\*$').firstMatch(line);
-      if (strongHeading != null &&
-          strongHeading.group(1)!.trim().length <= 120) {
-        flushBuffer();
-        blocks.add(
-            _TextBlock(_BlockType.heading, strongHeading.group(1)!.trim()));
-        continue;
-      }
-
-      final colonHeading = RegExp(r'^(.+):$').firstMatch(line);
-      if (colonHeading != null && colonHeading.group(1)!.trim().length <= 120) {
-        flushBuffer();
-        blocks
-            .add(_TextBlock(_BlockType.heading, colonHeading.group(1)!.trim()));
-        continue;
-      }
-
-      if (buffer.isNotEmpty) {
-        buffer.write(' ');
-      }
-      buffer.write(line);
-    }
-
-    flushBuffer();
-    return blocks;
-  }
-
-  static List<TextSpan> _buildInlineSpans(String text, TextStyle baseStyle) {
-    final spans = <TextSpan>[];
-    final pattern = RegExp(r'(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)');
-    int currentIndex = 0;
-
-    for (final match in pattern.allMatches(text)) {
-      if (match.start > currentIndex) {
-        spans.add(TextSpan(text: text.substring(currentIndex, match.start)));
-      }
-
-      final token = match.group(0)!;
-      final isBold = token.startsWith('**') || token.startsWith('__');
-      final isItalic =
-          !isBold && (token.startsWith('*') || token.startsWith('_'));
-      final normalized = _stripFormatting(token);
-
-      spans.add(
-        TextSpan(
-          text: normalized,
-          style: baseStyle.copyWith(
-            fontWeight: isBold ? FontWeight.w700 : baseStyle.fontWeight,
-            fontStyle: isItalic ? FontStyle.italic : baseStyle.fontStyle,
-          ),
-        ),
-      );
-
-      currentIndex = match.end;
-    }
-
-    if (currentIndex < text.length) {
-      spans.add(TextSpan(text: text.substring(currentIndex)));
-    }
-
-    if (spans.isEmpty) {
-      spans.add(TextSpan(text: text));
-    }
-
-    return spans;
-  }
-
-  static String _stripFormatting(String token) {
-    if (token.length >= 4 && token.startsWith('**') && token.endsWith('**')) {
-      return token.substring(2, token.length - 2);
-    }
-    if (token.length >= 4 && token.startsWith('__') && token.endsWith('__')) {
-      return token.substring(2, token.length - 2);
-    }
-    if (token.length >= 2 && token.startsWith('*') && token.endsWith('*')) {
-      return token.substring(1, token.length - 1);
-    }
-    if (token.length >= 2 && token.startsWith('_') && token.endsWith('_')) {
-      return token.substring(1, token.length - 1);
-    }
-    return token;
-  }
-}
-
 class _TypingIndicator extends StatefulWidget {
   const _TypingIndicator();
 
@@ -1199,19 +960,6 @@ class _TypingIndicatorState extends State<_TypingIndicator>
   }
 }
 
-enum _BlockType { heading, paragraph, bullet, numbered }
-
-class _TextBlock {
-  final _BlockType type;
-  final String text;
-  final String? prefix;
-
-  const _TextBlock(this.type, this.text, {this.prefix});
-}
-
-/// Exception khusus: koneksi stream putus tapi sudah ada konten sebagian.
-/// [partial] berisi teks yang sudah diterima sebelum koneksi terputus.
-/// Ini BUKAN error — digunakan untuk menampilkan jawaban parsial daripada pesan error.
 class _PartialStreamResult implements Exception {
   final String partial;
   const _PartialStreamResult(this.partial);
