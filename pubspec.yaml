@@ -18,6 +18,9 @@ dependencies:
   http: ^1.3.0
   flutter_client_sse: 2.0.3
   flutter_markdown: ^0.7.3
+  fetch_client: ^1.0.2
+  cupertino_http: any
+  cronet_http: any
   supabase_flutter: any
   line_awesome_flutter: any
   animate_do : any
