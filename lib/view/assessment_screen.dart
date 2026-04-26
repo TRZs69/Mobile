@@ -11,7 +11,6 @@ import 'package:app/service/user_chapter_service.dart';
 import 'package:app/service/user_course_service.dart';
 import 'package:app/service/user_service.dart';
 import 'package:app/utils/colors.dart';
-import 'package:app/view/questionnaire_screen.dart';
 
 class AssessmentScreen extends StatefulWidget {
   final ChapterStatus status;
