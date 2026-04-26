@@ -1,6 +1,6 @@
 name: app
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0-alpha+3
 
@@ -42,7 +42,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter_native_splash:
-  color: "#441F7F" # Warna latar belakang splash screen (hex color)
+  color: "#441F7F"
   image: lib/assets/pictures/logo-png.png
 
 flutter_launcher_icons:
