@@ -84,14 +84,13 @@ class _UpdateProfileState extends State<UpdateProfile> {
   }
 
   Future<void> updateUser() async {
-    if (user == null) return; // Prevent null access
+    if (user == null) return;
 
     final result = await UserService.updateUser(user!);
     setState(() {
       user = result;
     });
 
-    // Only update SharedPreferences if user data is not null
     if (user != null) {
       await prefs.setInt('userId', user!.id);
       await prefs.setString('name', user!.name);
@@ -408,7 +407,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
   void showSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent closing by tapping outside
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("Successful Update"),

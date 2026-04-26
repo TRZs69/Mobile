@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 
 import '../utils/colors.dart';
-// import 'package:flutter_launcher_icons/constants.dart';
 
 class CongratulationsScreen extends StatefulWidget {
   final String message;

@@ -300,7 +300,7 @@ class _ProfileState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(),
-                  SizedBox(height: 10), // Space between progress bar and text
+                  SizedBox(height: 10),
                   Text("Mohon Tunggu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -342,16 +342,6 @@ class _ProfileState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: GlobalVar.primaryColor,
-        // leading: IconButton(
-        //     onPressed: (){
-        //       Navigator.pushReplacement(
-        //         context,
-        //         MaterialPageRoute(
-        //             builder: (context) => Mainscreen()),
-        //       );
-        //     },
-        //     icon: Icon(LineAwesomeIcons.angle_left_solid, color: Colors.white,)
-        // ),
         automaticallyImplyLeading: false,
         title: Text(
             "Profile",
@@ -359,7 +349,6 @@ class _ProfileState extends State<ProfileScreen> {
                 fontFamily: 'DIN_Next_Rounded',
                 color: Colors.white
             )),
-        // actions: [IconButton(onPressed: (){}, icon: Icon(isDark ? LineAwesomeIcons.sun : LineAwesomeIcons.moon))],
       ),
       body:  Stack(
         children: [
@@ -393,7 +382,7 @@ class _ProfileState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(),
-                        SizedBox(height: 10), // Space between progress bar and text
+                        SizedBox(height: 10),
                         Text("Mohon Tunggu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -493,7 +482,6 @@ class _ProfileState extends State<ProfileScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          // const Divider(),
                           Container(
                             margin: EdgeInsets.symmetric(horizontal: 32),
                             padding: EdgeInsets.all(8.0),

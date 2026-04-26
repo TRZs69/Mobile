@@ -45,7 +45,6 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Hide device system bars by default and allow temporary reveal via edge swipe.
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     await Supabase.initialize(
@@ -96,24 +95,15 @@ class _BootstrapScreenState extends State<_BootstrapScreen> {
   Future<_InitialDestination> _resolveInitialDestination() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // ✅ Selalu periksa sesi aktif TERLEBIH DAHULU.
-    // Jika userId + token ada, user sudah pernah onboarding & login.
-    // Jangan bergantung pada `firstLaunch` saja — SharedPreferences bisa
-    // terhapus oleh sistem saat update/reinstall, yang menyebabkan user
-    // yang sudah punya progress dianggap "user baru" dan diarahkan ke
-    // onboarding, sehingga terkesan progress-nya "reset".
     final userId = prefs.getInt('userId');
     final token = prefs.getString('token') ?? '';
     final hasSession = userId != null && token.isNotEmpty;
 
     if (hasSession) {
-      // Sesi valid → langsung ke main app, progress aman.
-      // Pastikan firstLaunch juga ditandai agar konsisten.
       await prefs.setBool('firstLaunch', false);
       return _InitialDestination.mainApp;
     }
 
-    // Tidak ada sesi: periksa apakah perlu onboarding atau langsung login.
     final isFirstLaunch = prefs.getBool('firstLaunch') ?? true;
     return isFirstLaunch
         ? _InitialDestination.onboarding

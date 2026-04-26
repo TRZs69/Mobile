@@ -27,7 +27,6 @@ class _FriendsScreen extends State<FriendsScreen> {
 
   void getAllUser() async {
     try {
-      // Gunakan endpoint /user/leaderboard — sudah di-sort Elo desc & filter STUDENT di server
       final result = await UserService.getLeaderboard(
         onRevalidated: (freshData) {
           if (!mounted) return;
@@ -100,7 +99,6 @@ class _FriendsScreen extends State<FriendsScreen> {
            body: SingleChildScrollView(
              child: Column(
                children: [
-                 // Custom AppBar as a Container
                  Container(
                    height: 450,
                    width: double.infinity,
@@ -159,8 +157,8 @@ class _FriendsScreen extends State<FriendsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: ListView.builder(
-        shrinkWrap: true, // This makes ListView take only the space it needs
-        physics: NeverScrollableScrollPhysics(), // This disables ListView's own scrolling
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
         itemCount: sortedUsers.length,
         itemBuilder: (context, count) {
           return _listFriendsItem(

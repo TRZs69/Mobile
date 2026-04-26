@@ -33,8 +33,8 @@ class _TradeScreenState extends State<TradeScreen> {
   }
 
   Future<void> fetchTrades() async {
-    await getAllTrades(); // Wait until all trades are fetched
-    await getUserTrade(); // Then fetch user-specific trades
+    await getAllTrades();
+    await getUserTrade();
   }
 
   Future<void> getAllTrades() async {

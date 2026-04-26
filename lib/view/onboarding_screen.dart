@@ -47,7 +47,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Positioned.fill(
             child: Image.asset(
               'lib/assets/pictures/background-pattern.png',

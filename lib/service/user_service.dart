@@ -37,10 +37,6 @@ class UserService {
       throw Exception(e.toString());
     }
   }
-
-  /// Mendapatkan papan peringkat mahasiswa berdasarkan Elo tertinggi.
-  /// Memanggil endpoint GET /user/leaderboard yang sudah di-sort server-side.
-  /// [limit] jumlah maksimal mahasiswa yang diambil (default 50).
   static Future<List<Student>> getLeaderboard({
     int limit = 50,
     void Function(List<Student> freshData)? onRevalidated,
@@ -149,9 +145,7 @@ class UserService {
       } , body: jsonEncode(request));
 
       final body = response.body;
-      // print(body);
       final result = jsonDecode(body);
-      // print(result);
       Student users = Student.fromJson(result['user']);
       return users;
     } catch(e){
@@ -173,7 +167,6 @@ class UserService {
               body: jsonEncode(request));
 
       final body = response.body;
-      // print(body);
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -228,7 +221,6 @@ class UserService {
       } , body: jsonEncode(request));
 
       final body = response.body;
-      // print(body);
     } catch(e){
       throw Exception(e.toString());
     }

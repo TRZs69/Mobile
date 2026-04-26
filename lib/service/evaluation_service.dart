@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../model/user.dart'; // import GlobalVar if needed
+import '../model/user.dart';
 import '../utils/colors.dart'; 
 import '../global_var.dart';
 

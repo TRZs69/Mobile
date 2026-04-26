@@ -12,21 +12,19 @@ class CustomNavigationPainter extends CustomPainter {
     final selectedItemCenter = itemWidth * (selectedIndex + 0.5);
 
     final backgroundPaint = Paint()
-      ..color = primaryColor.withOpacity(0.2); // Sesuaikan opasitas
+      ..color = primaryColor.withOpacity(0.2);
     canvas.drawCircle(Offset(selectedItemCenter, size.height / 2), 30,
-        backgroundPaint); // Sesuaikan radius
+        backgroundPaint);
 
-    // Gambar garis di atas ikon
     final linePaint = Paint()
       ..color = primaryColor
       ..strokeWidth = 3;
     canvas.drawLine(
-      Offset(selectedItemCenter - 20, 0), // Sesuaikan panjang garis
+      Offset(selectedItemCenter - 20, 0),
       Offset(selectedItemCenter + 20, 0),
       linePaint,
     );
 
-    // Gambar garis di tepi navbar
     canvas.drawLine(
       Offset(itemWidth * selectedIndex, 0),
       Offset(itemWidth * selectedIndex, size.height),

@@ -1,7 +1,6 @@
 # Uncomment this line to define a global platform for your project
 # platform :ios, '13.0'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = '1'
 
 project 'Runner', {
@@ -14,8 +13,6 @@ def flutter_install_all_ios_pods(ios_application_path = nil)
   native_additions_path = File.join(ios_application_path, 'Flutter', 'flutter_export_environment.sh')
   return unless File.exist?(native_additions_path)
 
-  # This logic is adapted from the Flutter tool to read the environment variables
-  # exported by the Flutter tool.
   File.foreach(native_additions_path) do |line|
     matches = line.match(/\Aexport\s+(.+)=(.*)\z/)
     next unless matches
@@ -24,8 +21,6 @@ def flutter_install_all_ios_pods(ios_application_path = nil)
     ENV[key] = value
   end
 
-  # The Flutter tool creates this file. If it doesn't exist, it's possible that
-  # `flutter pub get` hasn't been run yet.
   podhelper_path = File.join(File.expand_path(File.dirname(__FILE__)), 'Flutter', 'podhelper.rb')
   require podhelper_path
   install_all_flutter_pods(ios_application_path)

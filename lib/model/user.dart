@@ -13,7 +13,7 @@ class Student {
   String? instructorId;
   int? instructorCourses;
   String? image;
-  int? rank; // Field tambahan dari endpoint /user/leaderboard
+  int? rank;
   final DateTime createdAt;
   final DateTime updatedAt;
 

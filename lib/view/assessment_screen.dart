@@ -90,7 +90,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     status = widget.status;
     user = widget.user;
     _grade = status.assessmentGrade;
-    // Ambil poin dari status jika assessment sudah pernah selesai sebelumnya
     _pointsEarned = status.assessmentPointsEarned;
     _eloDeltaFinal = status.assessmentEloDelta;
     _bootstrapCurrentAttempt();
@@ -172,7 +171,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     });
 
     try {
-      // If chapter-level warmup is still running, wait for it first so generation is done earlier.
       await ChapterService.waitForAssessmentWarmup(status.chapterId, user!.id);
 
       final currentAttempt = await ChapterService.getCurrentAssessmentAttempt(
@@ -335,7 +333,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Future<void> _applyFinalResult(Map<String, dynamic> result) async {
-    // Helper: konversi num/double/int dari JSON ke int dengan aman
     int safeInt(dynamic v, [int fallback = 0]) {
       if (v == null) return fallback;
       if (v is int) return v;
@@ -346,7 +343,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     setState(() {
       _grade = safeInt(result['grade']);
       _pointsEarned = safeInt(result['pointsEarned']);
-      // Prioritaskan 'eloDelta', fallback ke 'pointsEarned' jika tidak ada
       _eloDeltaFinal = result.containsKey('eloDelta')
           ? safeInt(result['eloDelta'])
           : _pointsEarned;
@@ -365,7 +361,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       status.assessmentDone = true;
       status.assessmentGrade = _grade;
       status.assessmentEloDelta = _eloDeltaFinal;
-      // Simpan pointsEarned ke status agar bisa ditampilkan ulang setelah navigasi
       status.assessmentPointsEarned = _pointsEarned;
       status.assessmentAnswer =
           _servedQuestions.map((q) => q.selectedAnswer).toList();
@@ -853,21 +848,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         ),
       ),
       ),
-      floatingActionButton: widget.level == 8
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QuestionnaireScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.assignment, color: Colors.white),
-              label: const Text('Isi Kuesioner', style: TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold)),
-              backgroundColor: AppColors.primaryColor,
-            )
-          : null,
     );
   }
 }

@@ -107,10 +107,8 @@ class _MainState extends State<Mainscreen> {
     
     if (sessionId == null || token == null) return;
 
-    // Call heartbeat immediately
     await _sendHeartbeat(sessionId, token);
 
-    // Set up timer to call every 10 minutes
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 10), (timer) async {
       await _sendHeartbeat(sessionId, token);
     });
@@ -344,7 +342,6 @@ class _MainState extends State<Mainscreen> {
 
   List<Widget> _buildTutorialOverlay() {
     return [
-      // Light grey scrim over the page (no blur)
       Positioned.fill(
         child: Container(
           color: Colors.black.withOpacity(0.18),
@@ -382,7 +379,6 @@ class _MainState extends State<Mainscreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header row: icon + title + counter
                 Row(
                   children: [
                     Container(
@@ -417,7 +413,6 @@ class _MainState extends State<Mainscreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Step dots
                 Row(
                   children: List.generate(_tutorialSteps.length, (i) {
                     return AnimatedContainer(
@@ -435,7 +430,6 @@ class _MainState extends State<Mainscreen> {
                   }),
                 ),
                 const SizedBox(height: 8),
-                // Description
                 Text(
                   step.description,
                   style: const TextStyle(
@@ -445,7 +439,6 @@ class _MainState extends State<Mainscreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [

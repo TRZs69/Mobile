@@ -22,7 +22,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../service/user_course_service.dart';
 import 'congratulation_screen.dart';
-import 'questionnaire_screen.dart';
 
 class AssignmentScreen extends StatefulWidget {
   final ChapterStatus status;
@@ -375,7 +374,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                       alignment: Alignment.center,
                       children: [
                         Icon(Icons.download_rounded, size: 30, color: AppColors.primaryColor),
-                        if (downloadProgress > 0.0 && downloadProgress < 1.0) // Show progress only while downloading
+                        if (downloadProgress > 0.0 && downloadProgress < 1.0)
                           SizedBox(
                             width: 40,
                             height: 40,
@@ -426,7 +425,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
                       if (result == null) return;
 
-                      final fileSizeInMB = result.files.first.size / (1024 * 1024); // Convert bytes to MB
+                      final fileSizeInMB = result.files.first.size / (1024 * 1024);
 
                       if (fileSizeInMB > 5) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -434,13 +433,13 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                         );
                       } else {
                         setState(() {
-                          file = result.files.first; // Ensure file updates
+                          file = result.files.first;
                         });
                       }
                     },
                     child: file == null
-                        ? _buildUploadBox()  // UI before file selection
-                        : _buildFilePreview(file!), // Updated file preview
+                        ? _buildUploadBox()
+                        : _buildFilePreview(file!),
                   ),
                 ),
                 lastestSubmissionUrl != '' ? _buildExistingFile(lastestSubmissionUrl) : SizedBox(),

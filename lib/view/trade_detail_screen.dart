@@ -209,7 +209,7 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
               image: AssetImage(
                   'lib/assets/pictures/background-pattern.png'
               ),
-              fit: BoxFit.cover, // Menyesuaikan gambar agar mengisi layar
+              fit: BoxFit.cover,
             ),
           ),
           child: Padding(
@@ -296,13 +296,13 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
                         badge.badge.name,
                         style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
                       ),
-                      selected: selectedBadges.contains(badge), // Checks if this is selected
+                      selected: selectedBadges.contains(badge),
                       onSelected: !badge.isPurchased
                           ? (selected) {
                         setState(() {
                           if (selected) {
-                            selectedBadges.clear(); // Clears previous selection
-                            selectedBadges.add(badge); // Adds new selection
+                            selectedBadges.clear();
+                            selectedBadges.add(badge);
                           }
                           errorMessage = '';
                         });

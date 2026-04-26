@@ -40,7 +40,7 @@ class _CourseDetail extends State<MycourseScreen> {
     });
 
     _searchController.addListener(_filterCourses);
-    filteredCourses = List.from(allCourses); // Initially show all courses
+    filteredCourses = List.from(allCourses); 
   }
 
   Future<void> _bootstrap() async {
@@ -106,7 +106,7 @@ class _CourseDetail extends State<MycourseScreen> {
     String query = _searchController.text.toLowerCase().trim();
     if (query.isEmpty) {
       setState(() {
-        filteredCourses = List.from(allCourses); // Reset list if empty
+        filteredCourses = List.from(allCourses);
       });
       return;
     }
@@ -117,7 +117,7 @@ class _CourseDetail extends State<MycourseScreen> {
     }).toList();
 
     setState(() {
-      filteredCourses = newFilteredList; // Ensures UI updates immediately
+      filteredCourses = newFilteredList;
     });
   }
 
@@ -145,9 +145,9 @@ class _CourseDetail extends State<MycourseScreen> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white, // Change this to your desired background color
+              color: Colors.white,
               image: DecorationImage(
-                image: AssetImage("lib/assets/learnbg.png"), // Background image
+                image: AssetImage("lib/assets/learnbg.png"),
                 fit: BoxFit.cover,
                 opacity: 0.7
               ),
@@ -299,7 +299,7 @@ class _CourseDetail extends State<MycourseScreen> {
                   Text(course.description!, style: TextStyle(fontSize: 13, color: Colors.white, fontFamily: 'DIN_Next_Rounded',), maxLines: 2, overflow: TextOverflow.ellipsis,),
                   SizedBox(height: 10,),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(15), // Ensure the child gets rounded corners
+                    borderRadius: BorderRadius.circular(15),
                     child: LinearProgressIndicator(
                       backgroundColor: Colors.white24,
                       valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondaryColor),

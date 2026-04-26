@@ -36,7 +36,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await UserService.login(emailController.text, passwordController.text).timeout(Duration(seconds: 15));
 
       if (response['code'] == 200) {
-        // Simpan token ke SharedPreferences
         Login credential = response['value'];
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -45,8 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setString('name', credential.name);
           await prefs.setString('role', credential.role);
           await prefs.setString('token', credential.token);
-          // Tandai sudah bukan first launch agar setelah update/reinstall
-          // user tidak dikirim ke onboarding lagi (cukup ke login).
           await prefs.setBool('firstLaunch', false);
           if (credential.sessionId != null) {
             await prefs.setInt('sessionId', credential.sessionId!);

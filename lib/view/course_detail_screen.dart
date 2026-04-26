@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 import 'package:app/model/badge.dart';
 import 'package:app/model/course.dart';
 import 'package:app/model/user.dart';
@@ -769,9 +768,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
                     });
                   }
 
-                  // Force-refresh dari server agar status assessmentDone ter-update
-                  // dan chapter berikutnya tidak tetap "locked" (chapter ngulang).
-                  // Invalidasi SWR cache untuk chapter & userCourse terlebih dahulu.
                   if (idCourse != 0) {
                     await ApiCacheService.clearCacheContaining('chapter');
                     await ApiCacheService.clearCacheContaining('userchapter');
@@ -828,7 +824,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
           ),
           listChapter[index].isCheckpoint == 1
               ? Positioned(
-                  top: 32, // Offset to be outside the card
+                  top: 32,
                   right: 32,
                   child: Icon(LineAwesomeIcons.medal_solid,
                       size: 50,
@@ -848,7 +844,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                               : Colors.white54))
                   : listChapter[index].isCheckpoint == 3
                       ? Positioned(
-                          top: 32, // Offset to be outside the card
+                          top: 32,
                           right: 32,
                           child: Icon(LineAwesomeIcons.medal_solid,
                               size: 50,
@@ -857,9 +853,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
                                   ? Colors.redAccent
                                   : Colors.white54))
                       : SizedBox(),
-          // Floating Level Badge
           Positioned(
-            top: -25, // Offset to be outside the card
+            top: -25,
             left: 0,
             right: 0,
             child: Center(
@@ -868,7 +863,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                 height: 75,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.secondaryColor, // Base green color
+                  color: AppColors.secondaryColor,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.green.shade900,
@@ -879,7 +874,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
                 ),
                 child: Stack(
                   children: [
-                    // Level text
                     Center(
                       child: Text(
                         '${chapter.level}',
@@ -890,7 +884,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                           shadows: [
                             Shadow(
                               color: Colors.green.shade900
-                                  .withOpacity(0.7), // Shadow behind text
+                                  .withOpacity(0.7),
                               blurRadius: 0,
                               offset: Offset(3, 3),
                             ),
@@ -954,9 +948,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
             ),
           ),
 
-          // Floating Level Badge
           Positioned(
-            top: -25, // Offset to be outside the card
+            top: -25,
             left: 0,
             right: 0,
             child: Center(
@@ -965,14 +958,14 @@ class _CourseDetail extends State<CourseDetailScreen> {
                 height: 75,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.green.shade600, // Base green color
+                  color: Colors.green.shade600,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.green.shade900.withOpacity(0.8),
-                      blurRadius: 10, // Increased for a softer shadow
+                      blurRadius: 10,
                       spreadRadius: 2,
                       offset: Offset(
-                          0, 6), // Adjusted offset for realistic shadowing
+                          0, 6),
                     ),
                   ],
                 ),
@@ -986,7 +979,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                       shadows: [
                         Shadow(
                           color: Colors.black.withOpacity(0.6),
-                          blurRadius: 4, // Added blur for better depth
+                          blurRadius: 4,
                           offset: Offset(2, 2),
                         ),
                       ],
@@ -1001,7 +994,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
     );
   }
 
-  // Helper Widget for Status Icons
   Widget _buildStatusIcon(bool isDone, IconData icon) {
     return Icon(
       icon,

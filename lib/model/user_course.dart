@@ -6,7 +6,6 @@ class UserCourse {
   int currentChapter;
   bool isCompleted;
   DateTime enrolledAt;
-  // Field opsional dari backend (elo rating kursus)
   int elo;
 
   UserCourse({
@@ -21,7 +20,6 @@ class UserCourse {
   });
 
   factory UserCourse.fromJson(Map<String, dynamic> json) {
-    // Helper: parse int dengan aman dari num/double/int/String
     int safeInt(dynamic v, [int fallback = 0]) {
       if (v == null) return fallback;
       if (v is int) return v;

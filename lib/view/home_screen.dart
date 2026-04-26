@@ -251,7 +251,6 @@ class _HomeState extends State<HomeScreen> {
 
   Future<void> getAllUser() async {
     try {
-      // Use getAllUser() to get the full list for accurate ranking (e.g. / 59 instead of / 50)
       final result = await UserService.getAllUser(
         onRevalidated: (freshData) {
           if (!mounted) return;
@@ -259,7 +258,6 @@ class _HomeState extends State<HomeScreen> {
           setState(() {
             list = filtered;
           });
-          // Recalculate rank after revalidation
           for (int i = 0; i < list.length; i++) {
             if (list[i].id == idUser) {
               setState(() {
@@ -597,7 +595,6 @@ class _HomeState extends State<HomeScreen> {
             ),
             SizedBox(
               width: double.infinity,
-              // height: 180,
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Column(
@@ -770,7 +767,7 @@ class _HomeState extends State<HomeScreen> {
                   height: 50,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.blue, // Background color
+                    color: Colors.blue,
                   ),
                   child: ClipOval(
                     child: user?.image != null && user?.image != ""
@@ -778,7 +775,7 @@ class _HomeState extends State<HomeScreen> {
                       user!.image!,
                       width: 50,
                       height: 50,
-                      fit: BoxFit.cover, // Ensures the image fills the container
+                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.person,
                         size: 30,
@@ -999,13 +996,13 @@ class _HomeState extends State<HomeScreen> {
   Widget _buildInfoColumn(
       IconData icon, String label, String value, Color color) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,  // Menyusun elemen ke kiri
-      crossAxisAlignment: CrossAxisAlignment.center,  // Vertikal rata tengah
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(
-          icon, // Icon yang ingin ditampilkan
-          color: color, // Warna icon
-          size: 24,  // Ukuran icon
+          icon,
+          color: color,
+          size: 24,
         ),
         SizedBox(width: 4),
         Expanded(
@@ -1013,17 +1010,16 @@ class _HomeState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                label, // Teks yang ingin ditampilkan
+                label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context)
                     .textTheme
                     .labelMedium!
                     .copyWith(
-                  // fontWeight: FontWeight.bold,
                   color: Colors.white,
                   fontFamily:
-                  'DIN_Next_Rounded', // Ganti dengan font yang diinginkan
+                  'DIN_Next_Rounded',
                 ),
               ),
               Text(value,
@@ -1038,7 +1034,7 @@ class _HomeState extends State<HomeScreen> {
                       fontFamily: 'DIN_Next_Rounded'))
             ],
           ),
-        )// Jarak antara icon dan text
+        )
       ],
     );
   }
@@ -1176,7 +1172,6 @@ class _HomeState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // Label di kanan atas
             Positioned(
               top: 8,
               right: 8,

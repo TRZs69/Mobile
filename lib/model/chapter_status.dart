@@ -13,7 +13,7 @@ class ChapterStatus {
   List<String> assessmentAnswer;
   int assessmentGrade;
   int assessmentEloDelta;
-  int assessmentPointsEarned; // Points dari assessment (untuk ditampilkan ulang)
+  int assessmentPointsEarned;
   String? submission;
   DateTime timeStarted;
   DateTime timeFinished;
@@ -45,7 +45,6 @@ class ChapterStatus {
   });
 
   factory ChapterStatus.fromJson(Map<String, dynamic> json) {
-    // Helper: parse int dengan aman dari num/double/int/String
     int safeInt(dynamic v, [int fallback = 0]) {
       if (v == null) return fallback;
       if (v is int) return v;

@@ -359,7 +359,6 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
                   fit: BoxFit.cover,
                 ),
                 Container(
-                  // margin: const EdgeInsets.only(top: -20),
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(
                     color: Colors.white,

@@ -8,7 +8,6 @@ import 'package:app/model/chapter_status.dart';
 import 'package:app/model/user.dart';
 import 'package:app/service/chapter_service.dart';
 import 'package:app/utils/colors.dart';
-import 'package:app/view/questionnaire_screen.dart';
 
 class AlreadyFinishedAssessmentAssessmentScreen extends StatefulWidget {
   final ChapterStatus status;
@@ -73,10 +72,10 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   Future<int> getScore() async {
     int score = 0;
     double rangeScore = 100 / question!.questions.length;
-    int tempCorrectAnswer = 0; // Temporary counter for correctAnswer
+    int tempCorrectAnswer = 0;
 
     for (int index = 0; index < question!.questions.length; index++) {
-      Question i = question!.questions[index]; // Ambil elemen berdasarkan index
+      Question i = question!.questions[index];
 
       if (i.type == 'PG' || i.type == 'TF' || i.type == 'MC') {
         if (i.isCorrect) {
@@ -102,7 +101,6 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
       }
     }
 
-    // Update state once after all calculations
     setState(() {
       correctAnswer = tempCorrectAnswer;
     });
@@ -124,26 +122,6 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
     } else {
       child = _emptyState();
     }
-    
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: child,
-      floatingActionButton: widget.level == 8
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QuestionnaireScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.assignment, color: Colors.white),
-              label: const Text('Isi Kuesioner', style: TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold)),
-              backgroundColor: AppColors.primaryColor,
-            )
-          : null,
-    );
   }
 
   Widget _buildQuizResultFuture() {
@@ -152,10 +130,10 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
       return _loadingState();
     }
     return FutureBuilder<bool>(
-      future: resultFuture, // Move result calculation to async function
+      future: resultFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _loadingState(); // Show loading indicator while waiting
+          return _loadingState();
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
@@ -167,7 +145,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
 
   Future<bool> _calculateResults() async {
     tapped = true;
-    correctAnswer = 0; // Reset the counter before starting the calculation
+    correctAnswer = 0;
     final questions = question?.questions ?? [];
     if (questions.isEmpty) {
       point = status.assessmentGrade;
@@ -247,14 +225,12 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
         }
     }
 
-    // Score must reflect objective questions only and ignore essay.
     point = nonEssayQuestions.fold<int>(0, (sum, q) => sum + q.score);
 
-    // Fallback to stored grade only when there is no objective question in payload.
     if (nonEssayQuestions.isEmpty) {
       point = status.assessmentGrade;
     }
-    return true; // Ensure the future completes successfully
+    return true;
   }
 
   Widget _loadingState() {
@@ -635,7 +611,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
             ),
             SizedBox(height: 8),
             TextField(
-              controller: controller, // ✅ Always initializes with selectedAnswer
+              controller: controller,
               maxLines: 4,
               minLines: 2,
               keyboardType: TextInputType.multiline,
@@ -660,7 +636,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
 
               onChanged: (String answer) {
                 setState(() {
-                  question.selectedAnswer = answer; // ✅ Saves the answer
+                  question.selectedAnswer = answer;
                 });
               },
             ),

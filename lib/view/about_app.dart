@@ -61,30 +61,30 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                   padding: EdgeInsets.all(0),
                     child: Column(
                         children: [
-                          Image.asset('lib/assets/pictures/about-header.png'),// Image 1
+                          Image.asset('lib/assets/pictures/about-header.png'),
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Text("Levelearn adalah aplikasi pembelajaran berbasis mobile dengan menggunakan pendekatan gamification guna menciptakan pengalaman pengguna aplikasi yang baik dalam belajar. Levelearn ditujukan sebagai media untuk pelajar dapat belajar materi secara mandiri diluar perkuliahan. Levelearn menyajikan gaya belajar yang interaktif dengan mengadopsi elemen-elemen dari game untuk diterapkan pada aplikasi. Levelearn juga diharapkan dapat meningkatkan kenyamanan belajar melalui kenyamanan dalam menggunakan aplikasi.",
                               style: TextStyle(fontSize: 14,
                               fontFamily: 'DIN_Next_Rounded',)
                             ),
-                          ), // Text 1
-                          Image.asset('lib/assets/pictures/about-logo.png'), // Image 2
+                          ),
+                          Image.asset('lib/assets/pictures/about-logo.png'),
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Text("Levelearn dikembangkan dengan latar belakang keperluan Tugas Akhir TA-2024/2025-13 Institut Teknologi Del yang berjudul 'Pendekatan Gamifikasi berbasis Preferensi Pengguna untuk Optimalisasi Pengalaman Pengguna pada E-Learning'. Adapaun studi kasus dari penelitian ini adalah Mata Kuliah Interaksi Manusia Komputer, yang melibatkan langsung mahasiswa mata kuliah Interaksi Manusia Komputer sebagai pengguna akhir aplikasi. Pengguna akhir aplikasi ini terlibat dalam pengembangan aplikasi, terkhusus dalam pemilihan elemen gamification untuk diterapkan pada aplikasi, dan evaluasi optimalisasi pengalaman pengguna pada aplikasi.",
                                 style: TextStyle(fontSize: 14,
                                   fontFamily: 'DIN_Next_Rounded',)
                             ),
-                          ), // Text 2
+                          ),
                           GridView(
-                            shrinkWrap: true, // Prevent unnecessary scrolling inside another scrollable view
-                            physics: NeverScrollableScrollPhysics(), // Disable internal scrolling
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3, // 3 columns
-                              crossAxisSpacing: 10, // Space between columns
-                              mainAxisSpacing: 10, // Space between rows
-                              childAspectRatio: 1, // Ensures square items
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1,
                             ),
                             children: [
                               Image.asset('lib/assets/pictures/flutter.png', fit: BoxFit.cover),
@@ -94,14 +94,14 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                               Image.asset('lib/assets/pictures/supabase.png', fit: BoxFit.cover),
                               Image.asset('lib/assets/pictures/docker.png', fit: BoxFit.cover),
                             ],
-                          ), // Image 3
+                          ),
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Text("Levelearn dibangun dengan mengkombinasikan beberapa jenis teknologi pengembangan aplikasi. Untuk pengembangan aplikasi mobile Levelearn menggunakan Flutter Dart, dan untuk pengembangan aplikasi web Levelearn menggunakan React. Untuk pengembangan backend aplikasi menggunakan Express (Node), dengan database berupa MySQL, dan storage menggunakan Supabase. Dan untuk deployment dan operation dari aplikasi menggunakan Docker.",
                                 style: TextStyle(fontSize: 14,
                                   fontFamily: 'DIN_Next_Rounded',)
                             ),
-                          ), // Text 3
+                          ),
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: SizedBox(
@@ -115,7 +115,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                                   label: Text("Explore More", style: TextStyle(fontSize: 14, fontFamily: 'DIN_Next_Rounded', color: Colors.white))
                               ),
                             ),
-                          ) // Link ke Github Levelearn
+                          )
                         ]
                     )
                 ),

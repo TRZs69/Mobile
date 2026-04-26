@@ -169,7 +169,6 @@ class ChapterService {
               ))
           .toList();
 
-      // Decode answers safely (null-safe handling)
       final List<String>? decodedAnswers = result['answers'] != null
           ? List<String>.from(jsonDecode(result['answers']))
           : null;

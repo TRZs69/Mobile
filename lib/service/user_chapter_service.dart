@@ -13,9 +13,6 @@ class UserChapterService {
       final body = response.body;
       final result = jsonDecode(body);
       if (result is List && result.isNotEmpty) {
-        // final resultListAnswer = (jsonDecode(result[0]['assessmentAnswer']) as List)
-        //     .map((item) => item.toString()) // Convert each item to String
-        //     .toList();
         status = ChapterStatus.fromJson(result[0]);
       } else {
          Map<String, dynamic> request = {
@@ -40,9 +37,6 @@ class UserChapterService {
          if (responsePost.statusCode == 201) {
            final body = responsePost.body;
            final resultPost = jsonDecode(body);
-           // final resultListAnswer = (jsonDecode(resultPost['userChapter']['assessmentAnswer']) as List)
-           //     .map((item) => item.toString()) // Convert each item to String
-           //     .toList();
            status = ChapterStatus.fromJson(resultPost['userChapter']);
          }
       }
@@ -77,9 +71,6 @@ class UserChapterService {
       if (responsePut.statusCode == 200) {
         final body = responsePut.body;
         final result = jsonDecode(body);
-        // final resultListAnswer = (jsonDecode(result['data']['assessmentAnswer']) as List)
-        //     .map((item) => item.toString()) // Convert each item to String
-        //     .toList();
         status = ChapterStatus.fromJson(result['data']);
       }
 

@@ -26,5 +26,4 @@ class GlobalVar {
   }
 }
 
-// Create an instance
 final globalVars = GlobalVar();

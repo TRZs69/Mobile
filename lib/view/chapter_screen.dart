@@ -41,7 +41,7 @@ class _ChapterScreenState extends State<Chapterscreen>
   Student? user;
   late TabController _tabController;
   int _currentIndex = 0;
-  final List<Widget?> _screens = [null, null, null]; // Lazy-loaded tabs
+  final List<Widget?> _screens = [null, null, null];
   late ChapterStatus status;
   bool materialComplete = false;
   bool _materialLocked = false;
@@ -72,7 +72,7 @@ class _ChapterScreenState extends State<Chapterscreen>
 
   void updateProgress(bool value) {
     setState(() {
-      materialComplete = true; // Update progress in real-time
+      materialComplete = true;
       _screens[1] = null;
     });
   }
@@ -93,14 +93,13 @@ class _ChapterScreenState extends State<Chapterscreen>
         widget.user.id,
       );
     } catch (error) {
-      // Silent fail. User can still start and backend will generate on start.
       debugPrint('Prefetch attempt failed: $error');
     }
   }
 
   void updateStatus(ChapterStatus value) {
     setState(() {
-      status = value; // Update progress in real-time
+      status = value;
       _screens[1] = null;
       _screens[2] = null;
     });
@@ -108,20 +107,20 @@ class _ChapterScreenState extends State<Chapterscreen>
 
   void updateMaterialLocked(bool value) {
     setState(() {
-      _materialLocked = value; // Update progress in real-time
+      _materialLocked = value;
       _screens[0] = null;
     });
   }
 
   void updateAssessmentStarted(bool value) {
     setState(() {
-      _assessmentStarted = value; // Update progress in real-time
+      _assessmentStarted = value;
     });
   }
 
   void updateAssessmentFinished(bool value) {
     setState(() {
-      _assessmentFinished = value; // Update progress in real-time
+      _assessmentFinished = value;
       _screens[2] = null;
     });
   }

@@ -7,7 +7,6 @@ class AppColors {
   static const Color lightGrey = Color.fromARGB(255, 217, 217, 217);
   static const Color darkGrey = Color.fromARGB(255, 125, 125, 125);
   
-  // Custom element colors
   static const Color appBarIconColor = Colors.white;
   static const Color drawerItemColor = primaryColor;
 }

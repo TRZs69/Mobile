@@ -71,7 +71,6 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
   int correctAnswer = 0;
   int point = 0;
   int kepanggilBerapaKaliNjing = 1;
-  // final MultiSelectController<String> _controller = MultiSelectController();
   double progressValue = 0.0;
   bool allQuestionsAnswered = false;
   bool assignmentDone = false;
@@ -79,7 +78,7 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
   bool showDialogAssignmentOnce = false;
   bool tapped = false;
   bool assessmentDone = false;
-  bool complete = false; //to indicate the chapter has completed before opened
+  bool complete = false;
   bool isSubmitted = false;
   bool _quizFinished = false;
   bool _assessmentStarted = false;
@@ -258,10 +257,10 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
   Future<int> getScore() async {
     int score = 0;
     double rangeScore = 100 / question!.questions.length;
-    int tempCorrectAnswer = 0; // Temporary counter for correctAnswer
+    int tempCorrectAnswer = 0;
 
     for (int index = 0; index < question!.questions.length; index++) {
-      Question i = question!.questions[index]; // Ambil elemen berdasarkan index
+      Question i = question!.questions[index];
 
       if (i.type == 'PG' || i.type == 'TF' || i.type == 'MC') {
         if (i.isCorrect) {
@@ -289,7 +288,6 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
       }
     }
 
-    // Update state once after all calculations
     setState(() {
       correctAnswer = tempCorrectAnswer;
     });
@@ -478,8 +476,8 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
                 child: TabBarView(
                   controller: _tabController,
                   physics: progressValue < 1.0 || (_assessmentStarted && !_assessmentFinished)
-                      ? const NeverScrollableScrollPhysics() // Disable swipe when progress < 100%
-                      : const AlwaysScrollableScrollPhysics(), // Enable swipe when progress = 100%
+                      ? const NeverScrollableScrollPhysics()
+                      : const AlwaysScrollableScrollPhysics(),
                   children: <Widget>[
                     _materialLocked ? _lockedMaterialContent() : _buildMaterialContent(),
                     progressValue >= 1.0 ? widget.status.assessmentDone == true ? _buildQuizResultFuture() : _buildNewAssessmentContent() : _lockedContent(),
@@ -512,14 +510,13 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
                   children: [
                     SizedBox(height: 16),
                     _buildHTMLContent(material!.content),
-                    SizedBox(height: 16), // Prevents layout overflow
+                    SizedBox(height: 16),
                   ],
                 ),
               ),
             ),
           ),
 
-        // ✅ Positioned correctly inside Stack, not Column
         if (progressValue >= 1.0)
           Positioned(
             bottom: 16,
@@ -838,10 +835,10 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
 
   Widget _buildQuizResultFuture() {
     return FutureBuilder<bool>(
-      future: _calculateResults(), // Move result calculation to async function
+      future: _calculateResults(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator(); // Show loading indicator while waiting
+          return CircularProgressIndicator();
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
@@ -855,7 +852,7 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
     print("kepanggilBerapaKaliNjing : $kepanggilBerapaKaliNjing");
     kepanggilBerapaKaliNjing++;
     tapped = true;
-    correctAnswer = 0; // Reset the counter before starting the calculation
+    correctAnswer = 0;
 
     for (int i = 0; i < status.assessmentAnswer.length; i++) {
       question?.questions[i].selectedAnswer = status.assessmentAnswer[i];
@@ -882,10 +879,9 @@ class _ChapterScreen extends State<Chapterscreen> with TickerProviderStateMixin 
     print("awoo");
 
     point = status.assessmentGrade;
-    return true; // Ensure the future completes successfully
+    return true;
   }
 
-// Empty State UI
   Widget _emptyState() {
     return Center(
       child: Column(

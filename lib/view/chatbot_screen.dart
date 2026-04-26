@@ -116,9 +116,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ? storedSessionId
         : null;
     });
-
-    // inheritSession: restore session ID for backend persona context but keep
-    // the visible chat blank — history resets per chapter, persona persists.
+ 
     if (widget.inheritSession) {
       return;
     }
@@ -241,7 +239,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() {
       _sessionId = next;
       if (skipFetch && !_sessions.any((s) => s.id == next)) {
-        // Manually insert placeholder so the stream can start typing into it
         _sessions.insert(0, ChatSession(id: next, title: ''));
       }
     });
@@ -393,10 +390,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
   }
 
-  /// Coba kirim via stream SSE.
-  /// - Jika koneksi putus di tengah jalan dan sudah ada konten → lempar [_PartialStreamResult]
-  /// - Jika koneksi putus sebelum ada konten → otomatis retry via non-stream endpoint
-  /// - Jika server error / timeout → lempar Exception
   Future<String> _streamAssistantReply({
     required String prompt,
     required int assistantIndex,
@@ -440,7 +433,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         return reply;
       }
 
-      // Parsing SSE stream
       final lineStream = response.stream
         .transform(utf8.decoder)
         .transform(const LineSplitter());
@@ -494,12 +486,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             errMsg.contains('Connection reset');
 
         if (isConnectionClosed) {
-          // Koneksi putus — cek apakah sudah ada konten
           if (replyBuffer.trim().isNotEmpty) {
-            // Sudah ada konten sebagian — tampilkan, jangan tampilkan error
             throw _PartialStreamResult(replyBuffer);
           }
-          // Belum ada konten — fallback ke non-stream endpoint
           return await _fallbackNonStream(prompt: prompt, bodyJson: body);
         }
         rethrow;
@@ -507,7 +496,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
       return replyBuffer;
     } on _PartialStreamResult {
-      rethrow; // Biarkan _sendMessage tangani
+      rethrow;
     } on Exception catch (e) {
       final errMsg = e.toString();
       final isConnectionClosed = errMsg.contains('Connection closed') ||
