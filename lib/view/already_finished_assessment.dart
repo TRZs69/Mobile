@@ -122,6 +122,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
     } else {
       child = _emptyState();
     }
+    return child;
   }
 
   Widget _buildQuizResultFuture() {

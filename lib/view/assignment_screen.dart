@@ -178,80 +178,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   void updateProgressAssignment() {
     if (status.assignmentDone && status.isCompleted && !showDialogAssignmentOnce) {
       showDialogAssignmentOnce = true;
-      if (widget.level == 8) {
-        showQuestionnairePopUp(context);
-      } else {
-        showCompletionDialog(context, "Yeay kamu berhasil menyelesaikan Chapter ini, Ayo lanjutkan pelajari chapter yang lain");
-      }
+      showCompletionDialog(context, "Yeay kamu berhasil menyelesaikan Chapter ini, Ayo lanjutkan pelajari chapter yang lain");
     }
-  }
-
-  void showQuestionnairePopUp(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text(
-            "Progress Completed!",
-            style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor),
-            textAlign: TextAlign.center,
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                Image.asset('lib/assets/pixels/check.png', height: 72),
-                SizedBox(height: 16,),
-                Text(
-                  "Yeay kamu berhasil menyelesaikan Chapter 8! Mohon luangkan waktu sebentar untuk mengisi kuesioner.",
-                  style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const QuestionnaireScreen(),
-                    ),
-                  ).then((_) {
-                    _navigateToCongratulations();
-                  });
-                },
-                child: Text(
-                  "Isi Kuesioner",
-                  style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _navigateToCongratulations();
-                },
-                child: Text(
-                  "Nanti Saja",
-                  style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.grey),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _navigateToCongratulations() {
