@@ -10,6 +10,8 @@ import 'package:app/view/about_app.dart';
 import 'package:app/view/quick_access_screen.dart';
 import 'package:app/view/trade_screen.dart';
 import 'package:app/view/update_profile_screen.dart';
+import 'package:app/view/widgets/custom_refresh_scroll.dart';
+import 'package:app/service/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -257,14 +259,7 @@ class _ProfileState extends State<ProfileScreen> {
   }
 
   Future<void> logout() async {
-    await prefs.remove('userId');
-    await prefs.remove('name');
-    await prefs.remove('role');
-    await prefs.remove('token');
-    await prefs.remove('sessionId');
-    await prefs.remove('lastestSelectedCourse');
-    await prefs.remove('latestSelectedCourse');
-    await prefs.remove('getCourseDetail');
+    await AuthService.logout();
   }
 
   /// Navigasi setelah logout: selalu ke login.

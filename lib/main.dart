@@ -9,6 +9,7 @@ import 'package:app/utils/colors.dart';
 import 'package:app/view/login_screen.dart';
 import 'package:app/view/main_screen.dart';
 import 'package:app/view/onboarding_screen.dart';
+import 'package:app/view/widgets/session_timeout_wrapper.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -63,8 +64,10 @@ class LevelyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Levelearn',
+    return SessionTimeoutWrapper(
+      timeout: const Duration(minutes: 15),
+      child: MaterialApp(
+        title: 'Levelearn',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
@@ -72,6 +75,7 @@ class LevelyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const _BootstrapScreen(),
+      ),
     );
   }
 }

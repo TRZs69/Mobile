@@ -11,11 +11,13 @@ import '../model/user_badge.dart';
 import '../service/badge_service.dart';
 import '../service/course_service.dart';
 import '../service/user_service.dart';
+import '../service/auth_service.dart';
 import '../utils/colors.dart';
 import 'chatbot_screen.dart';
 import 'login_screen.dart';
 
 import 'package:app/view/chatbot_response_rating.dart';
+import 'package:app/view/widgets/custom_refresh_scroll.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) updateIndex;
@@ -335,11 +337,7 @@ class _HomeState extends State<HomeScreen> {
   }
 
   void logout() async {
-    pref.remove('userId');
-    pref.remove('name');
-    pref.remove('role');
-    pref.remove('token');
-    pref.remove('sessionId');
+    await AuthService.logout();
 
     if (!mounted) return;
     Navigator.pushReplacement(

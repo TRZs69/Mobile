@@ -374,7 +374,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         iconTheme: const IconThemeData(color: AppColors.appBarIconColor),
-        title: const Text('Levely Chat', style: TextStyle(color: AppColors.appBarIconColor)),
+        title: const Text('Levely', style: TextStyle(color: AppColors.appBarIconColor)),
         centerTitle: true,
       ),
       body: Column(

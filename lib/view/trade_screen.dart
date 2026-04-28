@@ -4,6 +4,7 @@ import 'package:app/service/trade_service.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/view/main_screen.dart';
 import 'package:app/view/trade_detail_screen.dart';
+import 'package:app/view/widgets/custom_refresh_scroll.dart';
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';

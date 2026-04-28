@@ -19,6 +19,7 @@ import 'package:app/model/user.dart';
 import 'package:app/model/user_course.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/view/chapter_screen.dart';
+import 'package:app/view/widgets/custom_refresh_scroll.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final int id;
