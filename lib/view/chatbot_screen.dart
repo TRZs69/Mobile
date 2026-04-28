@@ -51,6 +51,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     'Levely lagi mikir sebentar…',
     'Sebentar ya, aku susun jawabannya dulu.',
     'Tunggu bentar, aku lagi nyari contoh terbaik.',
+    'Sedang merangkai penjelasan untukmu...',
+    'Menghubungkan ke pusat pengetahuan...',
+    'Hampir selesai, tunggu ya!',
+    'Sedang mencari referensi yang paling pas...',
+    'Sedang memproses pertanyaanmu...',
+    'Sedang menyiapkan jawaban terbaik...',
+    'Menelusuri arsip materi...',
   ];
 
   final List<ChatMessage> _messages = [];
@@ -67,6 +74,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final Random _random = Random();
   String? _currentPlaceholder;
   List<ChatSession> _sessions = [];
+  Timer? _placeholderTimer;
 
   String get _sessionPrefsKey {
     final chapterId = widget.chapterId;
@@ -86,6 +94,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   void dispose() {
+    _placeholderTimer?.cancel();
     _controller.dispose();
     for (var msg in _messages) {
       msg.contentNotifier.dispose();
@@ -205,6 +214,25 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (_history.length > 20) _history.removeRange(0, _history.length - 20);
   }
 
+  void _startPlaceholderCycling(int index) {
+    _placeholderTimer?.cancel();
+    _placeholderTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!mounted || !_isSending || _streamHasProducedContent || _activeStreamIndex != index) {
+        timer.cancel();
+        return;
+      }
+      // Pick a different one each time
+      final currentText = _messages[index].content;
+      String nextText = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+      while (nextText == currentText) {
+        nextText = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+      }
+      
+      _currentPlaceholder = nextText;
+      _messages[index].content = nextText;
+    });
+  }
+
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _isSending) return;
@@ -224,6 +252,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _currentPlaceholder = placeholder;
     });
 
+    _startPlaceholderCycling(assistantIndex);
+
     try {
       final reply = await _streamAssistantReply(prompt: text, assistantIndex: assistantIndex);
       if (!mounted) return;
@@ -239,6 +269,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         _activeStreamIndex = null;
         _streamHasProducedContent = false;
         _isSending = false;
+        _placeholderTimer?.cancel();
       });
       _fetchSessions();
     } catch (error) {
@@ -253,6 +284,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         _isSending = false;
         _activeStreamIndex = null;
         _streamHasProducedContent = false;
+        _placeholderTimer?.cancel();
       });
     }
   }
@@ -337,12 +369,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (!mounted || index < 0 || index >= _messages.length) return;
     
     // Check if we need to hide the loading/placeholder state
-    if (_activeStreamIndex == index && content.isNotEmpty && content != _currentPlaceholder) {
+    if (_activeStreamIndex == index && content.isNotEmpty && !_thinkingPlaceholders.contains(content)) {
       if (!_streamHasProducedContent) {
         setState(() {
           _streamHasProducedContent = true;
-          // _isSending must remain true until the whole stream is finished
-          // to prevent race conditions and duplicate messages.
+          _placeholderTimer?.cancel();
         });
       }
     }
