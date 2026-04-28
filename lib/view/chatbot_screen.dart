@@ -229,8 +229,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       if (!mounted) return;
 
       final finalReply = reply.trim().isEmpty ? _fallbackAssistantReply : reply.trim();
-      _messages[assistantIndex].content = finalReply;
-      _addToHistory(isUser: false, content: finalReply);
+      
+      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+        _messages[assistantIndex].content = finalReply;
+        _addToHistory(isUser: false, content: finalReply);
+      }
       
       setState(() {
         _activeStreamIndex = null;
@@ -241,7 +244,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     } catch (error) {
       if (!mounted) return;
       String errMsg = error is _PartialStreamResult ? (error.partial.isEmpty ? _fallbackAssistantReply : error.partial) : 'Error: $error';
-      _messages[assistantIndex].content = errMsg;
+      
+      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+        _messages[assistantIndex].content = errMsg;
+      }
+      
       setState(() {
         _isSending = false;
         _activeStreamIndex = null;
@@ -334,7 +341,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       if (!_streamHasProducedContent) {
         setState(() {
           _streamHasProducedContent = true;
-          _isSending = false;
+          // _isSending must remain true until the whole stream is finished
+          // to prevent race conditions and duplicate messages.
         });
       }
     }
@@ -347,7 +355,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (!mounted || _sessionId == null) return;
     setState(() {
       final i = _sessions.indexWhere((s) => s.id == _sessionId);
-      if (i != -1) _sessions[i] = _sessions[i].copyWith(title: (_sessions[i].title ?? '') + delta);
+      if (i != -1 && i < _sessions.length) {
+        _sessions[i] = _sessions[i].copyWith(title: (_sessions[i].title ?? '') + delta);
+      }
     });
   }
 
@@ -355,7 +365,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (!mounted || _sessionId == null) return;
     setState(() {
       final i = _sessions.indexWhere((s) => s.id == _sessionId);
-      if (i != -1) _sessions[i] = _sessions[i].copyWith(title: title);
+      if (i != -1 && i < _sessions.length) {
+        _sessions[i] = _sessions[i].copyWith(title: title);
+      }
     });
   }
 
@@ -387,6 +399,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 padding: const EdgeInsets.all(16),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
+                  if (index >= _messages.length) return const SizedBox.shrink();
                   final msg = _messages[index];
                   return _ChatBubble(
                     message: msg,
@@ -409,12 +422,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   void _onSelectSession(ChatSession session) async {
+    if (_isSending || _isLoadingHistory) return;
     await _persistSessionId(session.id);
     await _fetchHistory(session.id);
     setState(() {});
   }
 
   void _showSessionOptions(ChatSession session) {
+    if (_isSending || _isLoadingHistory) return;
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -482,6 +497,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   void _confirmDeleteSession(ChatSession session) {
+    if (_isSending || _isLoadingHistory) return;
     showDialog(
       context: context,
       builder: (context) {
@@ -521,13 +537,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           Expanded(
             child: TextField(
               controller: _controller,
+              enabled: !_isLoadingHistory,
               onSubmitted: (_) => _sendMessage(),
               decoration: const InputDecoration(hintText: 'Tanya apa saja...', border: OutlineInputBorder()),
             ),
           ),
           const SizedBox(width: 12),
           IconButton(
-            onPressed: _isSending ? null : _sendMessage,
+            onPressed: (_isSending || _isLoadingHistory) ? null : _sendMessage,
             icon: _isSending 
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.send, color: AppColors.primaryColor),
@@ -544,6 +561,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ListTile(
             leading: const Icon(Icons.add),
             title: const Text('Chat Baru'),
+            enabled: !_isSending && !_isLoadingHistory,
             onTap: () {
               setState(() { _sessionId = null; _messages.clear(); _history.clear(); });
               Navigator.pop(context);
@@ -554,12 +572,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           Expanded(
             child: ListView.builder(
               itemCount: _sessions.length,
-              itemBuilder: (context, i) => ListTile(
-                title: Text(_sessions[i].title ?? 'Chat Baru'),
-                selected: _sessions[i].id == _sessionId,
-                onTap: () { Navigator.pop(context); _onSelectSession(_sessions[i]); },
-                onLongPress: () => _showSessionOptions(_sessions[i]),
-              ),
+              itemBuilder: (context, i) {
+                if (i >= _sessions.length) return const SizedBox.shrink();
+                return ListTile(
+                  title: Text(_sessions[i].title ?? 'Chat Baru'),
+                  selected: _sessions[i].id == _sessionId,
+                  onTap: () { Navigator.pop(context); _onSelectSession(_sessions[i]); },
+                  onLongPress: () => _showSessionOptions(_sessions[i]),
+                );
+              },
             ),
           ),
         ],

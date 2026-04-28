@@ -204,7 +204,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                   builder: (context) => ChatbotScreen(
                     // Reset visible chat while keeping chapter-specific
                     // chatbot sessions isolated from other chapters.
-                    inheritSession: true,
+                    startFresh: true,
                     materialId: material!.id,
                     chapterId: widget.status.chapterId,
                   ),
