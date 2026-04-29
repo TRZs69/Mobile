@@ -374,6 +374,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             final endIdx = dataStr.lastIndexOf('}');
             if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
               dataStr = dataStr.substring(startIdx, endIdx + 1);
+            } else {
+              continue;
             }
 
             try {
