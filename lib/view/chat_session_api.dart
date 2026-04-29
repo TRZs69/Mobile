@@ -103,4 +103,31 @@ class ChatSessionApi {
     final response = await http.delete(url);
     return response.statusCode == 200;
   }
+
+  static Future<Map<String, dynamic>?> editMessage({
+    required String sessionId,
+    required String messageId,
+    required String newMessage,
+    int? userId,
+    int? materialId,
+    int? chapterId,
+  }) async {
+    final url = Uri.parse('${GlobalVar.baseUrl}/chat/edit');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'sessionId': sessionId,
+        'messageId': messageId,
+        'newMessage': newMessage,
+        'userId': userId,
+        'materialId': materialId,
+        'chapterId': chapterId,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Server Error ${response.statusCode}: ${response.body}');
+    }
+    return jsonDecode(response.body);
+  }
 }

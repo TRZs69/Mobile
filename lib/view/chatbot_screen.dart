@@ -17,10 +17,11 @@ import 'package:app/utils/colors.dart';
 import 'package:app/view/chat_session_api.dart';
 
 class ChatMessage {
+  String? id;
   final ValueNotifier<String> contentNotifier;
   final bool isUser;
 
-  ChatMessage({required String content, required this.isUser})
+  ChatMessage({this.id, required String content, required this.isUser})
       : contentNotifier = ValueNotifier(content);
       
   String get content => contentNotifier.value;
@@ -184,8 +185,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final loadedMessages = payload.map((raw) {
       final map = (raw as Map<String, dynamic>? ?? {});
       final content = (map['content'] ?? '').toString().trim();
+      final id = map['id']?.toString();
       if (content.isEmpty) return null;
-      return ChatMessage(content: content, isUser: (map['role'] ?? 'user') == 'user');
+      return ChatMessage(id: id, content: content, isUser: (map['role'] ?? 'user') == 'user');
     }).whereType<ChatMessage>().toList();
 
     if (!mounted) return;
@@ -276,10 +278,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
       final finalReply = reply.trim().isEmpty ? _fallbackAssistantReply : reply.trim();
       
-      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-        _messages[assistantIndex].content = finalReply;
-        _addToHistory(isUser: false, content: finalReply);
-      }
+      // Note: assistantIndex is already synced in _streamAssistantReply via _updateAssistantMessage
+      // and IDs are synced via _persistMessageIds
       
       setState(() {
         _activeStreamIndex = null;
@@ -371,6 +371,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 replyBuffer = replyValue;
                 _updateAssistantMessage(assistantIndex, replyBuffer);
               }
+
+              if (payload['userMessageId'] != null || payload['assistantMessageId'] != null) {
+                _persistMessageIds(
+                  userIndex: assistantIndex - 1,
+                  assistantIndex: assistantIndex,
+                  userId: payload['userMessageId']?.toString(),
+                  assistantId: payload['assistantMessageId']?.toString(),
+                );
+              }
+
               if (payload['titleDelta'] != null) _updateSessionTitleStream(payload['titleDelta']);
               if (payload['title'] != null) _updateSessionTitleFinal(payload['title']);
             } catch (_) {}
@@ -379,6 +389,18 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
       return replyBuffer;
     } finally { client.close(); }
+  }
+
+  void _persistMessageIds({required int userIndex, required int assistantIndex, String? userId, String? assistantId}) {
+    if (!mounted) return;
+    setState(() {
+      if (userIndex >= 0 && userIndex < _messages.length && userId != null) {
+        _messages[userIndex] = ChatMessage(id: userId, content: _messages[userIndex].content, isUser: true);
+      }
+      if (assistantIndex >= 0 && assistantIndex < _messages.length && assistantId != null) {
+        _messages[assistantIndex] = ChatMessage(id: assistantId, content: _messages[assistantIndex].content, isUser: false);
+      }
+    });
   }
 
   void _updateAssistantMessage(int index, String content) {
@@ -452,6 +474,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     message: msg,
                     isStreaming: index == _activeStreamIndex,
                     showIndicator: index == _activeStreamIndex && !_streamHasProducedContent,
+                    onEdit: (msg.isUser && msg.id != null && !_isSending) ? () => _showEditDialog(index) : null,
                   );
                 },
               ),
@@ -461,6 +484,116 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       ),
       drawer: _buildDrawer(),
     );
+  }
+
+  void _showEditDialog(int index) {
+    final msg = _messages[index];
+    final editController = TextEditingController(text: msg.content);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Pesan'),
+          content: TextField(
+            controller: editController,
+            decoration: const InputDecoration(hintText: 'Edit pesanmu...'),
+            maxLines: null,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+            TextButton(
+              onPressed: () {
+                final newText = editController.text.trim();
+                if (newText.isNotEmpty && newText != msg.content) {
+                  Navigator.pop(context);
+                  _editAndRegenerate(index, newText);
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Simpan & Ulang'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _editAndRegenerate(int index, String newText) async {
+    if (_sessionId == null || _isSending) return;
+    final msg = _messages[index];
+    if (msg.id == null) return;
+
+    setState(() {
+      _isSending = true;
+      // 1. Remove all messages after this one in the local UI
+      if (index + 1 < _messages.length) {
+        _messages.removeRange(index + 1, _messages.length);
+      }
+      // 2. Update the message content
+      _messages[index].content = newText;
+      _syncHistoryFromMessages(_messages);
+
+      // 3. Add placeholder for new response
+      final placeholder = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+      _messages.add(ChatMessage(content: placeholder, isUser: false));
+      _activeStreamIndex = _messages.length - 1;
+      _streamHasProducedContent = false;
+      _currentPlaceholder = placeholder;
+    });
+
+    _startPlaceholderCycling(_activeStreamIndex!);
+
+    try {
+      final result = await ChatSessionApi.editMessage(
+        sessionId: _sessionId!,
+        messageId: msg.id!,
+        newMessage: newText,
+        userId: _userId,
+        materialId: widget.materialId,
+        chapterId: widget.chapterId,
+      );
+
+      if (!mounted) return;
+
+      if (result == null) throw Exception('Gagal mengedit pesan');
+
+      final finalReply = (result['reply'] ?? '').toString().trim();
+      final assistantId = result['assistantMessageId']?.toString();
+      final userMessageId = result['userMessageId']?.toString();
+      
+      final assistantIndex = _messages.length - 1;
+
+      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+        _messages[assistantIndex].content = finalReply.isEmpty ? _fallbackAssistantReply : finalReply;
+        if (assistantId != null) _messages[assistantIndex].id = assistantId;
+        _addToHistory(isUser: false, content: _messages[assistantIndex].content);
+      }
+      
+      if (userMessageId != null) {
+        _messages[index].id = userMessageId;
+      }
+
+      setState(() {
+        _isSending = false;
+        _activeStreamIndex = null;
+        _streamHasProducedContent = false;
+        _placeholderTimer?.cancel();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final assistantIndex = _messages.length - 1;
+      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+        _messages[assistantIndex].content = 'Error: $e';
+      }
+      setState(() {
+        _isSending = false;
+        _activeStreamIndex = null;
+        _streamHasProducedContent = false;
+        _placeholderTimer?.cancel();
+      });
+    }
   }
 
   void _showSnack(String message) {
@@ -645,42 +778,46 @@ class _ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isStreaming;
   final bool showIndicator;
-  const _ChatBubble({required this.message, required this.isStreaming, required this.showIndicator});
+  final VoidCallback? onEdit;
+  const _ChatBubble({required this.message, required this.isStreaming, required this.showIndicator, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+    return GestureDetector(
+      onLongPress: onEdit,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-        decoration: BoxDecoration(
-          color: isUser ? AppColors.primaryColor : AppColors.accentColor.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            ValueListenableBuilder<String>(
-              valueListenable: message.contentNotifier,
-              builder: (context, content, _) {
-                return isUser 
-                  ? Text(content, style: const TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', height: 1.4))
-                  : (isStreaming 
-                      ? Text(content, style: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', height: 1.4))
-                      : MarkdownBody(
-                          data: content,
-                          styleSheet: MarkdownStyleSheet(
-                            p: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', height: 1.4),
-                            code: const TextStyle(backgroundColor: Colors.black12, fontFamily: 'monospace'),
-                          ),
-                        ));
-              }
-            ),
-            if (showIndicator) const Padding(padding: EdgeInsets.only(top: 6), child: _TypingIndicator()),
-          ],
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+          decoration: BoxDecoration(
+            color: isUser ? AppColors.primaryColor : AppColors.accentColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              ValueListenableBuilder<String>(
+                valueListenable: message.contentNotifier,
+                builder: (context, content, _) {
+                  return isUser 
+                    ? Text(content, style: const TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', height: 1.4))
+                    : (isStreaming 
+                        ? Text(content, style: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', height: 1.4))
+                        : MarkdownBody(
+                            data: content,
+                            styleSheet: MarkdownStyleSheet(
+                              p: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', height: 1.4),
+                              code: const TextStyle(backgroundColor: Colors.black12, fontFamily: 'monospace'),
+                            ),
+                          ));
+                }
+              ),
+              if (showIndicator) const Padding(padding: EdgeInsets.only(top: 6), child: _TypingIndicator()),
+            ],
+          ),
         ),
       ),
     );
