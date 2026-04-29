@@ -368,8 +368,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             if (dataStr.startsWith('\uFEFF')) dataStr = dataStr.substring(1).trim();
             if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
-            
-            // Aggressive JSON extraction: Find the first '{' and last '}'
+
             final startIdx = dataStr.indexOf('{');
             final endIdx = dataStr.lastIndexOf('}');
             if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
