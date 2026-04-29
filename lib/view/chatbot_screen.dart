@@ -153,8 +153,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         if (response.statusCode == 400 || response.statusCode == 404) await _clearPersistedSession();
         return;
       }
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      await _applyHistoryResponse(body, fallbackSessionId: sessionId);
+      String bodyStr = response.body.trim();
+      if (bodyStr.startsWith('\uFEFF')) bodyStr = bodyStr.substring(1).trim();
+      if (bodyStr.isEmpty || !bodyStr.startsWith('{')) return;
+      try {
+        final body = jsonDecode(bodyStr) as Map<String, dynamic>;
+        await _applyHistoryResponse(body, fallbackSessionId: sessionId);
+      } catch (e) {
+        debugPrint('Error decoding history JSON: $e');
+      }
     } catch (_) {} finally {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
@@ -170,8 +177,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ),
       );
       if (response.statusCode != 200) return;
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      await _applyHistoryResponse(body);
+      String bodyStr = response.body.trim();
+      // Strip UTF-8 BOM if present
+      if (bodyStr.startsWith('\uFEFF')) bodyStr = bodyStr.substring(1);
+      if (bodyStr.isEmpty) return;
+      try {
+        final body = jsonDecode(bodyStr) as Map<String, dynamic>;
+        await _applyHistoryResponse(body);
+      } catch (e) {
+        debugPrint('Error decoding user history JSON: $e | body: $bodyStr');
+      }
     } catch (_) {} finally {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
@@ -349,8 +364,18 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           sseBuffer = sseBuffer.substring(newlineIndex + 1);
 
           if (line.startsWith('data:')) {
-            final dataStr = line.substring(5).trim();
+            String dataStr = line.substring(5).trim();
+            if (dataStr.startsWith('\uFEFF')) dataStr = dataStr.substring(1).trim();
+            if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
+            
+            // Aggressive JSON extraction: Find the first '{' and last '}'
+            final startIdx = dataStr.indexOf('{');
+            final endIdx = dataStr.lastIndexOf('}');
+            if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
+              dataStr = dataStr.substring(startIdx, endIdx + 1);
+            }
+
             try {
               final payload = jsonDecode(dataStr) as Map<String, dynamic>;
               if (payload['error'] != null) throw Exception(payload['error']);
@@ -383,7 +408,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
               if (payload['titleDelta'] != null) _updateSessionTitleStream(payload['titleDelta']);
               if (payload['title'] != null) _updateSessionTitleFinal(payload['title']);
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('Error parsing stream SSE data: $e | data: $dataStr');
+            }
           }
         }
       }
@@ -525,6 +552,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final msg = _messages[index];
     if (msg.id == null) return;
 
+    late final int assistantIndex;
+    final placeholder = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+
     setState(() {
       _isSending = true;
       // 1. Remove all messages after this one in the local UI
@@ -536,44 +566,24 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _syncHistoryFromMessages(_messages);
 
       // 3. Add placeholder for new response
-      final placeholder = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
       _messages.add(ChatMessage(content: placeholder, isUser: false));
-      _activeStreamIndex = _messages.length - 1;
+      assistantIndex = _messages.length - 1;
+      _activeStreamIndex = assistantIndex;
       _streamHasProducedContent = false;
       _currentPlaceholder = placeholder;
     });
 
-    _startPlaceholderCycling(_activeStreamIndex!);
+    _startPlaceholderCycling(assistantIndex);
 
     try {
-      final result = await ChatSessionApi.editMessage(
-        sessionId: _sessionId!,
+      final reply = await _streamEditAssistantReply(
         messageId: msg.id!,
         newMessage: newText,
-        userId: _userId,
-        materialId: widget.materialId,
-        chapterId: widget.chapterId,
+        assistantIndex: assistantIndex,
+        userIndex: index,
       );
-
+      
       if (!mounted) return;
-
-      if (result == null) throw Exception('Gagal mengedit pesan');
-
-      final finalReply = (result['reply'] ?? '').toString().trim();
-      final assistantId = result['assistantMessageId']?.toString();
-      final userMessageId = result['userMessageId']?.toString();
-      
-      final assistantIndex = _messages.length - 1;
-
-      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-        _messages[assistantIndex].content = finalReply.isEmpty ? _fallbackAssistantReply : finalReply;
-        if (assistantId != null) _messages[assistantIndex].id = assistantId;
-        _addToHistory(isUser: false, content: _messages[assistantIndex].content);
-      }
-      
-      if (userMessageId != null) {
-        _messages[index].id = userMessageId;
-      }
 
       setState(() {
         _isSending = false;
@@ -581,9 +591,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         _streamHasProducedContent = false;
         _placeholderTimer?.cancel();
       });
+      _fetchSessions();
     } catch (e) {
       if (!mounted) return;
-      final assistantIndex = _messages.length - 1;
       if (assistantIndex >= 0 && assistantIndex < _messages.length) {
         _messages[assistantIndex].content = 'Error: $e';
       }
@@ -594,6 +604,102 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         _placeholderTimer?.cancel();
       });
     }
+  }
+
+  Future<String> _streamEditAssistantReply({
+    required String messageId,
+    required String newMessage,
+    required int assistantIndex,
+    required int userIndex,
+  }) async {
+    final body = {
+      'messageId': messageId,
+      'newMessage': newMessage,
+      'sessionId': _sessionId,
+      'userId': _userId,
+      if (widget.materialId != null) 'materialId': widget.materialId,
+      if (widget.chapterId != null) 'chapterId': widget.chapterId,
+    };
+
+    String replyBuffer = '';
+    final streamUri = ChatSessionApi.getEditStreamUri();
+    
+    http.Client client;
+    if (kIsWeb) {
+      client = FetchClient(mode: RequestMode.cors);
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      client = CupertinoClient.defaultSessionConfiguration();
+    } else if (Platform.isAndroid) {
+      client = CronetClient.defaultCronetEngine();
+    } else {
+      client = http.Client();
+    }
+    
+    try {
+      final request = http.Request('POST', streamUri)
+        ..headers['Content-Type'] = 'application/json'
+        ..headers['Accept'] = 'text/event-stream'
+        ..body = jsonEncode(body);
+
+      final response = await client.send(request);
+      if (response.statusCode != 200) throw Exception('Server error: ${response.statusCode}');
+
+      final rawStream = response.stream.transform(utf8.decoder);
+      String sseBuffer = '';
+
+      await for (final chunk in rawStream) {
+        sseBuffer += chunk;
+        while (sseBuffer.contains('\n')) {
+          int newlineIndex = sseBuffer.indexOf('\n');
+          String line = sseBuffer.substring(0, newlineIndex).trim();
+          sseBuffer = sseBuffer.substring(newlineIndex + 1);
+
+          if (line.startsWith('data:')) {
+            String dataStr = line.substring(5).trim();
+            if (dataStr.startsWith('\uFEFF')) dataStr = dataStr.substring(1).trim();
+            if (dataStr.isEmpty) continue;
+            if (dataStr == '[DONE]') break;
+
+            // Aggressive JSON extraction
+            final startIdx = dataStr.indexOf('{');
+            final endIdx = dataStr.lastIndexOf('}');
+            if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
+              dataStr = dataStr.substring(startIdx, endIdx + 1);
+            }
+
+            try {
+              final payload = jsonDecode(dataStr) as Map<String, dynamic>;
+              if (payload['error'] != null) throw Exception(payload['error']);
+
+              final delta = payload['delta']?.toString();
+              if (delta != null && delta.isNotEmpty) {
+                replyBuffer += delta;
+                _updateAssistantMessage(assistantIndex, replyBuffer);
+                await Future.delayed(const Duration(milliseconds: 40));
+              }
+
+              final replyValue = payload['reply']?.toString();
+              if (replyValue != null && replyValue.isNotEmpty) {
+                replyBuffer = replyValue;
+                _updateAssistantMessage(assistantIndex, replyBuffer);
+              }
+
+              if (payload['userMessageId'] != null || payload['assistantMessageId'] != null) {
+                _persistMessageIds(
+                  userIndex: userIndex,
+                  assistantIndex: assistantIndex,
+                  userId: payload['userMessageId']?.toString(),
+                  assistantId: payload['assistantMessageId']?.toString(),
+                );
+              }
+            } catch (e) {
+              debugPrint('Error parsing SSE data in edit stream: $e | data: $dataStr');
+            }
+          }
+        }
+      }
+      return replyBuffer;
+    } finally { client.close(); }
   }
 
   void _showSnack(String message) {
