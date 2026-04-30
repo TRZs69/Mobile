@@ -50,7 +50,7 @@ void main() {
 
     await Supabase.initialize(
       url: 'https://itarozdimxukkhwxruti.supabase.co',
-      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2aXZmcW5xeG5wZnBpanJ2a2tiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MTQxMjEsImV4cCI6MjA3NDE5MDEyMX0.VwNktSJnyCuvBHEEMw4hv4wsHm7wT1MxS6foqR2i4Nk',
+      anonKey: 'sb_publishable_7IQp0-oyu2uRbtj_t1TV0Q_0296vDcR',
     );
 
     runApp(const LevelyApp());

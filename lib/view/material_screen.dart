@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 import 'package:app/model/chapter_status.dart';
@@ -196,14 +197,12 @@ class _MaterialScreenState extends State<MaterialScreen> {
       ],
     ),
     floatingActionButton: material != null
-        ? FloatingActionButton.extended(
-            onPressed: () {
+        ? GestureDetector(
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatbotScreen(
-                    // Reset visible chat while keeping chapter-specific
-                    // chatbot sessions isolated from other chapters.
                     startFresh: true,
                     materialId: material!.id,
                     chapterId: widget.status.chapterId,
@@ -211,9 +210,33 @@ class _MaterialScreenState extends State<MaterialScreen> {
                 ),
               );
             },
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            label: const Text('Tanya Levely', style: TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold)),
-            backgroundColor: AppColors.primaryColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset(
+                  'lib/assets/vectors/levely_smile.svg',
+                  width: 56,
+                  height: 56,
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Tanya Levely',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontFamily: 'DIN_Next_Rounded',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           )
         : null,
   );

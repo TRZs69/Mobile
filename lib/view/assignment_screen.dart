@@ -152,7 +152,15 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     Uint8List bytes = file.bytes ?? await File(file.path!).readAsBytes();
 
     try {
-      await Supabase.instance.client.storage.from('assignment').uploadBinary(path, bytes);
+      print('DEBUG: Attempting upload to bucket assignments');
+      print('DEBUG: Path: $path');
+      final response = await Supabase.instance.client.storage.from('assignments').uploadBinary(
+        path, 
+        bytes,
+        retryAttempts: 3,
+      );
+      print('DEBUG: Upload response path: $response');
+      
       final publicUrl = getPublicUrl(path);
       status.timeFinished = DateTime.now();
       setState(() {
@@ -162,16 +170,36 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
         widget.updateStatus(status);
       });
       await updateStatus();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Assignment uploaded successfully!', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Upload error: $e');
+      }
+      if (mounted) {
+        setState(() {
+          _isFileUploaded = true; // Reset loading state on error
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: ${e.toString()}', style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
 
   String getPublicUrl(String filePath) {
     return Supabase.instance.client.storage
-        .from('assigment')
+        .from('assignments')
         .getPublicUrl(filePath);
   }
 

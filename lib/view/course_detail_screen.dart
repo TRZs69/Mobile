@@ -346,7 +346,9 @@ class _CourseDetail extends State<CourseDetailScreen> {
       int completedContiguous = 0;
       for (final chapter in sorted) {
         final st = chapter.status;
-        final done = (st?.materialDone ?? false) && (st?.assessmentDone ?? false);
+        final done = (st?.materialDone ?? false) &&
+            (st?.assessmentDone ?? false) &&
+            (st?.assignmentDone ?? false);
         if (!done) {
           break;
         }
@@ -555,10 +557,14 @@ class _CourseDetail extends State<CourseDetailScreen> {
                             }
 
                             final chapterIndex = count - 1;
+                            final chapter = listChapter[chapterIndex];
+                            final isUnlocked = chapter.level <= 8 ||
+                                chapterIndex <= (uc?.currentChapter ?? 0) - 1;
+
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 0, vertical: 0),
-                              child: chapterIndex <= (uc?.currentChapter ?? 0) - 1
+                              child: isUnlocked
                                   ? _buildCourseItem(chapterIndex)
                                   : _buildCourseItemLocked(chapterIndex),
                             );
@@ -830,7 +836,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
                   child: Icon(LineAwesomeIcons.medal_solid,
                       size: 50,
                       color: chapter.status!.materialDone &&
-                              chapter.status!.assessmentDone
+                              chapter.status!.assessmentDone &&
+                              chapter.status!.assignmentDone
                           ? Colors.tealAccent
                           : Colors.white54))
               : listChapter[index].isCheckpoint == 2
@@ -840,7 +847,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
                       child: Icon(LineAwesomeIcons.medal_solid,
                           size: 50,
                           color: chapter.status!.materialDone &&
-                                  chapter.status!.assessmentDone
+                                  chapter.status!.assessmentDone &&
+                                  chapter.status!.assignmentDone
                               ? Colors.blueAccent
                               : Colors.white54))
                   : listChapter[index].isCheckpoint == 3
@@ -850,7 +858,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
                           child: Icon(LineAwesomeIcons.medal_solid,
                               size: 50,
                               color: chapter.status!.materialDone &&
-                                      chapter.status!.assessmentDone
+                                      chapter.status!.assessmentDone &&
+                                      chapter.status!.assignmentDone
                                   ? Colors.redAccent
                                   : Colors.white54))
                       : SizedBox(),

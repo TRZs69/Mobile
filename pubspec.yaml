@@ -40,6 +40,7 @@ dependencies:
   fluttertoast: ^8.2.12
   url_launcher: ^6.3.1
   lottie: any
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +80,11 @@ flutter:
     - lib/assets/pictures/imk-picture.jpg
     - lib/assets/pictures/splash.png
     - lib/assets/vectors/welcome_primary.png
+    - lib/assets/vectors/levely_smile.svg
+    - lib/assets/vectors/levely_thinking.svg
+    - lib/assets/vectors/levely_error.svg
+    - lib/assets/vectors/levely_new_chat.svg
+    - lib/assets/vectors/levely_empty_chat.svg
     - lib/assets/vectors/artlover-secondary.svg
     - lib/assets/vectors/designergirl-secondary.svg
     - lib/assets/vectors/gameday-secondary.svg

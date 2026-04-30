@@ -11,6 +11,7 @@ import 'package:fetch_client/fetch_client.dart';
 import 'package:cupertino_http/cupertino_http.dart';
 import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:app/global_var.dart';
 import 'package:app/utils/colors.dart';
@@ -846,7 +847,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.add),
+            leading: SvgPicture.asset(
+              'lib/assets/vectors/levely_new_chat.svg',
+              width: 30,
+              height: 30,
+            ),
             title: const Text('Chat Baru'),
             enabled: !_isSending && !_isLoadingHistory,
             onTap: () {
@@ -877,7 +882,27 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   Widget _buildEmptyState() => Container(
     decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('lib/assets/pictures/background-pattern.png'), fit: BoxFit.cover)),
-    child: const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.chat_bubble_outline, size: 64, color: Colors.black45), SizedBox(height: 16), Text('Mulai ngobrol dengan Levely!')])),
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, 
+        children: [
+          SvgPicture.asset(
+            'lib/assets/vectors/levely_empty_chat.svg',
+            width: 100,
+            height: 100,
+          ), 
+          const SizedBox(height: 16), 
+          const Text(
+            'Mulai ngobrol dengan Levely!',
+            style: TextStyle(
+              fontFamily: 'DIN_Next_Rounded',
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          )
+        ]
+      )
+    ),
   );
 }
 
@@ -896,37 +921,72 @@ class _ChatBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-          decoration: BoxDecoration(
-            color: isUser ? AppColors.primaryColor : AppColors.accentColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            children: [
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUser) ...[
               ValueListenableBuilder<String>(
                 valueListenable: message.contentNotifier,
-                builder: (context, content, _) {
-                  return isUser 
-                    ? Text(content, style: const TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', height: 1.4))
-                    : (isStreaming 
-                        ? Text(content, style: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', height: 1.4))
-                        : MarkdownBody(
-                            data: content,
-                            styleSheet: MarkdownStyleSheet(
-                              p: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', height: 1.4),
-                              code: const TextStyle(backgroundColor: Colors.black12, fontFamily: 'monospace'),
-                            ),
-                          ));
-                }
+                builder: (context, content, _) => _buildAvatar(content),
               ),
-              if (showIndicator) const Padding(padding: EdgeInsets.only(top: 6), child: _TypingIndicator()),
+              const SizedBox(width: 8),
             ],
-          ),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+                decoration: BoxDecoration(
+                  color: isUser ? AppColors.primaryColor : AppColors.accentColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    ValueListenableBuilder<String>(
+                      valueListenable: message.contentNotifier,
+                      builder: (context, content, _) {
+                        return isUser 
+                          ? Text(content, style: const TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', fontSize: 16, height: 1.4))
+                          : (isStreaming 
+                              ? Text(content, style: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', fontSize: 16, height: 1.4))
+                              : MarkdownBody(
+                                  data: content,
+                                  styleSheet: MarkdownStyleSheet(
+                                    p: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', fontSize: 16, height: 1.4),
+                                    code: const TextStyle(backgroundColor: Colors.black12, fontFamily: 'monospace'),
+                                  ),
+                                ));
+                      }
+                    ),
+                    if (showIndicator) const Padding(padding: EdgeInsets.only(top: 6), child: _TypingIndicator()),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAvatar(String content) {
+    String asset = 'lib/assets/vectors/levely_smile.svg';
+    if (showIndicator) {
+      asset = 'lib/assets/vectors/levely_thinking.svg';
+    } else if (content.startsWith('Error:') || content.contains('Maaf, aku belum bisa menjawab.')) {
+      asset = 'lib/assets/vectors/levely_error.svg';
+    }
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.accentColor.withOpacity(0.2),
+        shape: BoxShape.circle,
+      ),
+      padding: const EdgeInsets.all(6),
+      child: SvgPicture.asset(asset),
     );
   }
 }

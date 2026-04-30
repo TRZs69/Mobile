@@ -1,0 +1,18 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Kepala Utama (Deep Purple) -->
+  <rect x="20" y="40" width="160" height="140" rx="50" fill="#441F7F" />
+  
+  <!-- Layar Wajah (Darker Purple) -->
+  <rect x="40" y="65" width="120" height="90" rx="30" fill="#2E1555" />
+  
+  <!-- Antena "Level-Up" (Deep Purple + Green Tip) -->
+  <rect x="92" y="15" width="16" height="30" rx="8" fill="#441F7F" />
+  <circle cx="100" cy="15" r="10" fill="#1AAD21" stroke="#441F7F" stroke-width="3" />
+  
+  <!-- Mata Digital (Accent Purple) - Ekspresi Ramah/Happy -->
+  <path d="M65 105 Q75 90 85 105" stroke="#DDC8FF" stroke-width="8" fill="none" stroke-linecap="round" />
+  <path d="M115 105 Q125 90 135 105" stroke="#DDC8FF" stroke-width="8" fill="none" stroke-linecap="round" />
+  
+  <!-- Senyum Tipis -->
+  <path d="M90 135 Q100 142 110 135" stroke="#DDC8FF" stroke-width="4" fill="none" stroke-linecap="round" />
+</svg>
