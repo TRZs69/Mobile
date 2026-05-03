@@ -62,6 +62,7 @@ class _WhatADealScreenState extends State<WhatADealScreen> {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
+                        Navigator.pop(context);
                       },
                       style: ButtonStyle(backgroundColor: WidgetStateProperty.all<Color>(AppColors.primaryColor)),
                       child: Text("Ayo, dapatkan lebih banyak badge!", style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'DIN_Next_Rounded')),

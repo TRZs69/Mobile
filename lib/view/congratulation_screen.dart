@@ -1,5 +1,3 @@
-import 'package:app/model/badge.dart';
-import 'package:app/service/badge_service.dart';
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 
@@ -7,10 +5,9 @@ import '../utils/colors.dart';
 
 class CongratulationsScreen extends StatefulWidget {
   final String message;
-  final int idBadge;
   final VoidCallback? onContinue;
 
-  const CongratulationsScreen({super.key, required this.message, this.onContinue, required this.idBadge});
+  const CongratulationsScreen({super.key, required this.message, this.onContinue});
 
   @override
   _CongratulationsScreenState createState() => _CongratulationsScreenState();
@@ -18,35 +15,18 @@ class CongratulationsScreen extends StatefulWidget {
 
 class _CongratulationsScreenState extends State<CongratulationsScreen> {
   late ConfettiController _confettiController;
-  BadgeModel? badge;
-  int idBadge = 0;
 
   @override
   void initState() {
-    idBadge = widget.idBadge;
-    if(idBadge != 0) {
-      getBadgeById(idBadge);
-      super.initState();
-      _confettiController = ConfettiController(duration: const Duration(seconds: 10));
-      _confettiController.play();
-    } else {
-      super.initState();
-      _confettiController = ConfettiController(duration: const Duration(seconds: 10));
-      _confettiController.play();
-    }
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 10));
+    _confettiController.play();
   }
 
   @override
   void dispose() {
     _confettiController.dispose();
     super.dispose();
-  }
-
-  Future<void> getBadgeById(int id) async {
-    final result = await BadgeService.getBadgeById(id);
-    setState(() {
-      badge = result;
-    });
   }
 
   @override
@@ -62,15 +42,7 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  idBadge != 0 ?
-                    badge?.image != null && badge?.image != "" ?
-                      Image.network(
-                        badge!.image!,
-                        height: 100,
-                        width: 100,
-                        errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pixels/check.png', height: 100),
-                      ) : Image.asset('lib/assets/pixels/check.png', height: 100)
-                  : Image.asset('lib/assets/pixels/star.png', height: 100),
+                  Image.asset('lib/assets/pixels/star.png', height: 100),
                   const SizedBox(height: 20),
                   Text(
                     "Congratulations!",
@@ -83,7 +55,6 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    idBadge != 0 ? "Yeay, you've got badge ${badge?.name}!" :
                     widget.message,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: Colors.black54, fontFamily: 'DIN_Next_Rounded'),

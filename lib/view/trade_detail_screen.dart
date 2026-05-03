@@ -1,9 +1,5 @@
-import 'package:app/model/badge.dart';
 import 'package:app/model/trade.dart';
-import 'package:app/model/user_badge.dart';
-import 'package:app/service/badge_service.dart';
 import 'package:app/service/trade_service.dart';
-import 'package:app/service/user_badge_service.dart';
 import 'package:app/view/whatadeal_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -26,70 +22,13 @@ class TradeDetailScreen extends StatefulWidget {
 class _TradeDetailScreenState extends State<TradeDetailScreen> {
 
   late SharedPreferences pref;
-  List<UserBadge> userBadges = [];
-  List<BadgeModel> allowedBadges = [];
-  List<UserBadge> userBadgesWithStatus = [];
-
-  List<UserBadge> selectedBadges = [];
   String errorMessage = '';
   Student? user;
 
   @override
   void initState() {
     user = widget.user;
-    getUserBadges();
-    getUserBadgesWithStatus();
     super.initState();
-  }
-
-  Future<void> getUserBadges() async {
-    try {
-      pref = await SharedPreferences.getInstance();
-      int? id = pref.getInt('userId');
-      if (id == null) return;
-
-      final result = await BadgeService.getUserBadgeListByUserId(
-        id,
-        onRevalidated: (freshBadges) {
-          if (!mounted) return;
-          setState(() {
-            userBadges = freshBadges;
-          });
-        },
-      );
-      if (!mounted) return;
-
-      setState(() {
-        userBadges = result;
-      });
-    } catch (e) {
-      debugPrint("Error fetching user badges: $e");
-    }
-  }
-
-  Future<void> getUserBadgesWithStatus() async {
-    try {
-      pref = await SharedPreferences.getInstance();
-      int? id = pref.getInt('userId');
-      if (id == null) return;
-
-      final result = await BadgeService.getUserBadgeListWithStatusByUserId(
-        id,
-        onRevalidated: (freshBadges) {
-          if (!mounted) return;
-          setState(() {
-            userBadgesWithStatus = freshBadges;
-          });
-        },
-      );
-      if (!mounted) return;
-
-      setState(() {
-        userBadgesWithStatus = result;
-      });
-    } catch (e) {
-      debugPrint("Error fetching user badges: $e");
-    }
   }
 
   Future<void> updateUserPoints() async {
@@ -97,63 +36,57 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
   }
 
   Future<void> _purchase(int reqPoint) async {
-    if(_isPurchaseValid()) {
+    if(_isPurchaseValid(reqPoint)) {
       pref = await SharedPreferences.getInstance();
       int? id = pref.getInt('userId');
+      
       setState(() {
-        user!.points = user!.points! - reqPoint;
+        user!.points = (user!.points ?? 0) - reqPoint;
       });
 
       try {
-        await createUserTrade(id!, widget.trade.id, selectedBadges.first.id);
-        await updateUserBadgeStatus(selectedBadges.first.id, true);
-        getUserBadges();
-        updateUserPoints();
+        // Create the trade record in backend
+        await TradeService.createUserTrade(id!, widget.trade.id, 0);
+        // Persist the new point balance
+        await updateUserPoints();
 
         print('Pembelian berhasil!');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          showCompletionDialog(context, "Transaksi badge anda telah berhasil!", false);
-        });
+        if (mounted) {
+          showCompletionDialog(context, "Transaksi poin anda telah berhasil!", false);
+        }
       } catch (e) {
         debugPrint("Error during purchase: $e");
-        setState(() {
-          errorMessage = 'Terjadi kesalahan saat melakukan pembelian.';
-        });
+        if (mounted) {
+          setState(() {
+            errorMessage = 'Terjadi kesalahan saat melakukan pembelian.';
+          });
+        }
       }
     } else {
       setState(() {
-        errorMessage = 'Badge yang dipilih tidak sesuai.';
+        errorMessage = 'Poin atau Tingkatan (Elo) Anda tidak mencukupi.';
       });
     }
   }
 
-  bool _isPurchaseValid() {
-    if (selectedBadges.isEmpty) {
-      return false;
-    }
-    for (var badge in selectedBadges) {
-      if (badge.badge.type != widget.trade.requiredBadgeType) {
-        return false;
-      }
-      if( badge.badge.type.toUpperCase() == 'BEGINNER' && user!.points! < 100){
-        return false;
-      }
-      if( badge.badge.type.toUpperCase() == 'INTERMEDIATE' && user!.points! < 300){
-        return false;
-      }
-      if( badge.badge.type.toUpperCase() == 'ADVANCE' && user!.points! < 500){
-        return false;
-      }
-    }
-    return true;
-  }
+  bool _isPurchaseValid(int reqPoint) {
+    if (user == null) return false;
+    
+    // Check Point balance
+    if ((user!.points ?? 0) < reqPoint) return false;
 
-  Future<void> createUserTrade(int userId, int tradeId, int badgeId) async{
-    await TradeService.createUserTrade(userId, tradeId, badgeId);
-  }
-
-  Future<void> updateUserBadgeStatus(int badgeId, bool status) async{
-    await UserBadgeService.updateUserBadgeStatus(badgeId, status);
+    // Check Elo Rank Requirement
+    final int userElo = user!.elo ?? 750;
+    switch (widget.trade.requiredBadgeType.toUpperCase()) {
+      case 'BEGINNER':
+        return userElo >= 750;
+      case 'INTERMEDIATE':
+        return userElo >= 1200;
+      case 'ADVANCE':
+        return userElo >= 1600;
+      default:
+        return true;
+    }
   }
 
   void showCompletionDialog(BuildContext context, String message, bool isAssignment) {
@@ -279,50 +212,27 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
                   ),
                 ),
                 Text(
-                  'Tukarkan satu buah badge dengan tipe ${widget.trade.requiredBadgeType} dan tukarkan point sebanyak $reqPoint untuk mendapatkan penawaran ini!',
+                  'Dapatkan tingkatan ${widget.trade.requiredBadgeType} dengan mengumpulkan Elo, dan tukarkan point sebanyak $reqPoint untuk mendapatkan penawaran ini!',
                   style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
                 ),
-                SizedBox(height: 16),
-                Text('Pilih Badge untuk ditukarkan:', style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
-                userBadges.isEmpty
-                    ? Text('Anda belum memiliki badge.', style: TextStyle(fontFamily: 'DIN_Next_Rounded'))
-                    : Wrap(
-                  spacing: 8.0,
-                  children: userBadges.map((badge) {
-                    return ChoiceChip(
-                      selectedColor: AppColors.accentColor,
-                      backgroundColor: Colors.white,
-                      label: Text(
-                        badge.badge.name,
-                        style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
-                      ),
-                      selected: selectedBadges.contains(badge),
-                      onSelected: !badge.isPurchased
-                          ? (selected) {
-                        setState(() {
-                          if (selected) {
-                            selectedBadges.clear();
-                            selectedBadges.add(badge);
-                          }
-                          errorMessage = '';
-                        });
-                      }
-                          : null,
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 16),
+                SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isPurchaseValid() ? () => _purchase(reqPoint) : null,
+                    onPressed: _isPurchaseValid(reqPoint) ? () => _purchase(reqPoint) : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: Text(
-                      'Purchase',
+                      'Purchase with Points',
                       style: TextStyle(
                           color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                           fontFamily: 'DIN_Next_Rounded'
                       ),
                     ),
@@ -340,7 +250,7 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
             ),
           ),
         ),
-      )
+      ),
     ) :  Scaffold(
       appBar: AppBar(
         title: const Text("Trade Redeemed", style: TextStyle(fontFamily: 'DIN_Next_Rounded',),),

@@ -85,21 +85,33 @@ class _QuickAccessScreenState extends State<QuickAccessScreen> {
           itemBuilder: (context, index) {
             final item = quickAccessItems[index];
             return ListTile(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    item.imageUrl,
-                    errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png'),
-                  ),
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  item.imageUrl,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png'),
                 ),
-                title: Text(item.name,
-                    style: TextStyle(
-                        fontFamily: 'DIN_Next_Rounded',
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryColor)),
+              ),
+              title: Text(
+                item.name,
+                style: const TextStyle(
+                  fontFamily: 'DIN_Next_Rounded',
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+              subtitle: Text(
+                Uri.parse(item.link).host,
+                style: const TextStyle(
+                  fontFamily: 'DIN_Next_Rounded',
+                ),
+              ),
               onTap: () {
                 _launchURL(item.link);
-              }
+              },
             );
           },
         ),

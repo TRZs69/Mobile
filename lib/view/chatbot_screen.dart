@@ -12,6 +12,7 @@ import 'package:cupertino_http/cupertino_http.dart';
 import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
 import 'package:app/global_var.dart';
 import 'package:app/utils/colors.dart';
@@ -81,6 +82,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final List<ChatMessage> _messages = [];
   final List<Map<String, String>> _history = [];
   final TextEditingController _controller = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   bool _isSending = false;
   bool _isLoadingHistory = false;
@@ -93,6 +95,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   String? _currentPlaceholder;
   List<ChatSession> _sessions = [];
   Timer? _placeholderTimer;
+  String _searchQuery = '';
 
   String get _sessionPrefsKey {
     final chapterId = widget.chapterId;
@@ -114,6 +117,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   void dispose() {
     _placeholderTimer?.cancel();
     _controller.dispose();
+    _searchController.dispose();
     for (var msg in _messages) {
       msg.contentNotifier.dispose();
     }
@@ -484,6 +488,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         iconTheme: const IconThemeData(color: AppColors.appBarIconColor),
+        leading: IconButton(
+          icon: Icon(LineAwesomeIcons.angle_left_solid),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Levely', style: TextStyle(color: AppColors.appBarIconColor)),
         centerTitle: true,
       ),
@@ -511,7 +519,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           _buildInputArea(),
         ],
       ),
-      drawer: _buildDrawer(),
+      endDrawer: _buildDrawer(),
     );
   }
 
@@ -842,10 +850,47 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     ),
   );
 
-  Widget _buildDrawer() => Drawer(
-    child: SafeArea(
+  Widget _buildDrawer() {
+    final filteredSessions = _sessions.where((session) {
+      final title = (session.title ?? 'Chat Baru').toLowerCase();
+      return title.contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    return Drawer(
       child: Column(
         children: [
+          // Absolute top: Search Bar
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari riwayat...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+          // Followed by New Chat button
           ListTile(
             leading: SvgPicture.asset(
               'lib/assets/vectors/levely_new_chat.svg',
@@ -859,26 +904,28 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               Navigator.pop(context);
             },
           ),
-          const Divider(),
+          const Divider(height: 1),
           if (_isLoadingSessions) const CircularProgressIndicator(),
           Expanded(
             child: ListView.builder(
-              itemCount: _sessions.length,
+              padding: EdgeInsets.zero,
+              itemCount: filteredSessions.length,
               itemBuilder: (context, i) {
-                if (i >= _sessions.length) return const SizedBox.shrink();
+                if (i >= filteredSessions.length) return const SizedBox.shrink();
+                final session = filteredSessions[i];
                 return ListTile(
-                  title: Text(_sessions[i].title ?? 'Chat Baru'),
-                  selected: _sessions[i].id == _sessionId,
-                  onTap: () { Navigator.pop(context); _onSelectSession(_sessions[i]); },
-                  onLongPress: () => _showSessionOptions(_sessions[i]),
+                  title: Text(session.title ?? 'Chat Baru'),
+                  selected: session.id == _sessionId,
+                  onTap: () { Navigator.pop(context); _onSelectSession(session); },
+                  onLongPress: () => _showSessionOptions(session),
                 );
               },
             ),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
 
   Widget _buildEmptyState() => Container(
     decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('lib/assets/pictures/background-pattern.png'), fit: BoxFit.cover)),

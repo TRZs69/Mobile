@@ -18,7 +18,6 @@ class Chapterscreen extends StatefulWidget {
   final int chLength;
   final Student user;
   final String chapterName;
-  final int idBadge;
   final int level;
   const Chapterscreen({
     super.key,
@@ -28,7 +27,6 @@ class Chapterscreen extends StatefulWidget {
     required this.chLength,
     required this.user,
     required this.chapterName,
-    this.idBadge = 0,
     required this.level,
   });
 
@@ -170,7 +168,7 @@ class _ChapterScreenState extends State<Chapterscreen>
                   level: widget.level,
                   chapterName: widget.chapterName,
                   chLength: widget.chLength,
-                  idBadge: widget.idBadge,
+                  chapterIndexInList: widget.chapterIndexInList,
                   updateProgress: updateProgress,
                   updateStatus: updateStatus,
                 )

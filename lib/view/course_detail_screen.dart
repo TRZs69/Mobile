@@ -311,7 +311,19 @@ class _CourseDetail extends State<CourseDetailScreen> {
 
       if (idUser != 0) {
         try {
-          result = await CourseService.getChapterByCourseForUser(id, idUser);
+          result = await CourseService.getChapterByCourseForUser(
+            id,
+            idUser,
+            onRevalidated: (freshData) {
+              if (!mounted) return;
+              final updatedList = _ensureChapterStatuses(freshData);
+              setState(() {
+                listChapter = updatedList;
+              });
+              _chapterCache[_chapterCacheKey()] = List<Chapter>.from(updatedList);
+              unawaited(_syncCourseProgressFromChapters());
+            },
+          );
         } catch (_) {
           final fallback = await CourseService.getChapterByCourse(id);
           result = await getStatusChapter(fallback);
@@ -442,39 +454,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
     );
   }
 
-  int idOfBadge(int isCheckpoint) {
-    int idbadge = 0;
-    switch (isCheckpoint) {
-      case 1:
-        {
-          for (BadgeModel i in listBadge!) {
-            if (i.type == 'BEGINNER') {
-              idbadge = i.id;
-            }
-          }
-        }
-      case 2:
-        {
-          for (BadgeModel i in listBadge!) {
-            if (i.type == 'INTERMEDIATE') {
-              idbadge = i.id;
-            }
-          }
-        }
-      case 3:
-        {
-          for (BadgeModel i in listBadge!) {
-            if (i.type == 'ADVANCE') {
-              idbadge = i.id;
-            }
-          }
-        }
-      default:
-        idbadge = 0;
-    }
-    return idbadge;
-  }
-
   @override
   Widget build(BuildContext context) {
     return _buildDetailCourse();
@@ -558,8 +537,17 @@ class _CourseDetail extends State<CourseDetailScreen> {
 
                             final chapterIndex = count - 1;
                             final chapter = listChapter[chapterIndex];
+                            
+                            // A chapter is unlocked if:
+                            // 1. It's one of the initial chapters (level <= 8)
+                            // 2. It's the current chapter or below according to uc.currentChapter
+                            // 3. The previous chapter is completed
+                            final bool previousCompleted = chapterIndex > 0 && 
+                                (listChapter[chapterIndex - 1].status?.isCompleted ?? false);
+                                
                             final isUnlocked = chapter.level <= 8 ||
-                                chapterIndex <= (uc?.currentChapter ?? 0) - 1;
+                                chapterIndex <= (uc?.currentChapter ?? 0) - 1 ||
+                                previousCompleted;
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(
@@ -759,7 +747,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
                       chLength: listChapter.length,
                       user: user!,
                       chapterName: listChapter[index].name,
-                      idBadge: idOfBadge(listChapter[index].isCheckpoint),
                       level: listChapter[index].level,
                     ),
                   ),
@@ -773,14 +760,17 @@ class _CourseDetail extends State<CourseDetailScreen> {
                       listChapter[returnedIndex].status =
                           ChapterStatus.fromJson(returnedStatus as Map<String, dynamic>);
                     });
+                    // Sync locally immediately so the next chapter unlocks right away
+                    unawaited(_syncCourseProgressFromChapters());
                   }
 
                   if (idCourse != 0) {
                     await ApiCacheService.clearCacheContaining('chapter');
                     await ApiCacheService.clearCacheContaining('userchapter');
+                    // Await these to ensure the UI stays updated with the latest server state
+                    await getChapter(idCourse);
+                    await getUserCourse();
                   }
-                  unawaited(getChapter(idCourse));
-                  unawaited(getUserCourse());
                 }
 
               },
@@ -829,40 +819,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
               ),
             ),
           ),
-          listChapter[index].isCheckpoint == 1
-              ? Positioned(
-                  top: 32,
-                  right: 32,
-                  child: Icon(LineAwesomeIcons.medal_solid,
-                      size: 50,
-                      color: chapter.status!.materialDone &&
-                              chapter.status!.assessmentDone &&
-                              chapter.status!.assignmentDone
-                          ? Colors.tealAccent
-                          : Colors.white54))
-              : listChapter[index].isCheckpoint == 2
-                  ? Positioned(
-                      top: 32, // Offset to be outside the card
-                      right: 32,
-                      child: Icon(LineAwesomeIcons.medal_solid,
-                          size: 50,
-                          color: chapter.status!.materialDone &&
-                                  chapter.status!.assessmentDone &&
-                                  chapter.status!.assignmentDone
-                              ? Colors.blueAccent
-                              : Colors.white54))
-                  : listChapter[index].isCheckpoint == 3
-                      ? Positioned(
-                          top: 32,
-                          right: 32,
-                          child: Icon(LineAwesomeIcons.medal_solid,
-                              size: 50,
-                              color: chapter.status!.materialDone &&
-                                      chapter.status!.assessmentDone &&
-                                      chapter.status!.assignmentDone
-                                  ? Colors.redAccent
-                                  : Colors.white54))
-                      : SizedBox(),
           Positioned(
             top: -25,
             left: 0,

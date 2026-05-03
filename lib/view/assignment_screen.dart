@@ -29,8 +29,8 @@ class AssignmentScreen extends StatefulWidget {
   final UserCourse uc;
   final int level;
   final String? chapterName;
-  final int idBadge;
   final int chLength;
+  final int chapterIndexInList;
   final Function(bool) updateProgress;
   final Function(ChapterStatus) updateStatus;
   const AssignmentScreen({
@@ -40,8 +40,8 @@ class AssignmentScreen extends StatefulWidget {
     required this.uc,
     required this.level,
     this.chapterName,
-    this.idBadge = 0,
     required this.chLength,
+    required this.chapterIndexInList,
     required this.updateProgress,
     required this.updateStatus
   });
@@ -61,7 +61,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   bool _isFileUploaded = true;
   bool _isUserBadgeUpdated = true;
   bool _isUserCourseUpdated = true;
-  int idBadge = 0;
   int chLength = 0;
   bool complete = false;
   bool showDialogAssignmentOnce = false;
@@ -72,7 +71,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     status = widget.status;
     user = widget.user;
     uc = widget.uc;
-    idBadge = widget.idBadge;
     chLength = widget.chLength;
     complete = status.isCompleted;
     showDialogAssignmentOnce = widget.status.assignmentDone;
@@ -141,10 +139,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     });
   }
 
-  Future<void> createUserBadge(int userId, int badgeId) async{
-    await BadgeService.createUserBadgeByChapterId(userId, badgeId);
-  }
-
   Future<void> uploadFile(PlatformFile file) async {
     final filename = '${file.name.split('.').first}_${status.userId}_${status.chapterId}_${DateTime.now().millisecondsSinceEpoch}.${file.extension}';
     final path = 'uploads/$filename';
@@ -165,9 +159,12 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       status.timeFinished = DateTime.now();
       setState(() {
         status.submission = publicUrl;
+        lastestSubmissionUrl = publicUrl;
         status.isCompleted = true;
         status.assignmentDone = true;
+        this.file = null;
         widget.updateStatus(status);
+        _isFileUploaded = true;
       });
       await updateStatus();
       
@@ -210,29 +207,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     }
   }
 
-  void _navigateToCongratulations() {
-    if (!context.mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CongratulationsScreen(
-          message: "You have successfully completed Chapter 8!",
-          onContinue: () async {
-            if (!context.mounted) return;
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) => Mainscreen(navIndex: 2),
-              ),
-              (route) => false,
-            );
-          },
-          idBadge: idBadge,
-        ),
-      ),
-    );
-  }
-
   void showCompletionDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -266,6 +240,9 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                     backgroundColor: AppColors.primaryColor
                 ),
                 onPressed: () {
+                  // Pop the AlertDialog first
+                  Navigator.pop(context);
+                  
                   Future.delayed(Duration(milliseconds: 100), () {
                     if (context.mounted) {
                       Navigator.push(
@@ -275,16 +252,17 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                             message: "You have successfully completed this assignment!",
                             onContinue: () async {
                               if (!context.mounted) return;
+                              
+                              final navigator = Navigator.of(context);
 
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Mainscreen(navIndex: 2),
-                                ),
-                                (route) => false,
-                              );
+                              // Pop CongratulationsScreen
+                              navigator.pop();
+                              // Pop AssignmentScreen/ChapterScreen
+                              navigator.pop({
+                                'status': status.toJson(),
+                                'index': widget.chapterIndexInList,
+                              });
                             },
-                            idBadge: idBadge,
                           ),
                         ),
                       );
@@ -300,6 +278,53 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           ],
         );
 
+      },
+    );
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+
+    if (result == null) return;
+
+    final fileSizeInMB = result.files.first.size / (1024 * 1024);
+
+    if (fileSizeInMB > 5) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('File size must be 5MB or less', style: TextStyle(fontFamily: 'DIN_Next_Rounded'),)),
+      );
+    } else {
+      setState(() {
+        file = result.files.first;
+      });
+    }
+  }
+
+  void _downloadFile(String url) {
+    FileDownloader.downloadFile(
+      url: url,
+      onProgress: (name, progress) {
+        setState(() {
+          downloadProgress = progress / 100;
+        });
+      },
+      onDownloadCompleted: (filePath) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Download Complete, saved in $filePath", style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
+            action: SnackBarAction(
+              label: "Open",
+              onPressed: () => _openFile(filePath),
+            ),
+          ),
+        );
+        setState(() {
+          downloadProgress = 0;
+        });
       },
     );
   }
@@ -325,80 +350,21 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             child: Column(
               children: [
                 assignment?.instruction == null ? CircularProgressIndicator() : _buildHTMLAssignment(),
-                assignment?.fileUrl != null && assignment?.fileUrl != "" ? ListTile(
-                    leading: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(Icons.download_rounded, size: 30, color: AppColors.primaryColor),
-                        if (downloadProgress > 0.0 && downloadProgress < 1.0)
-                          SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: CircularProgressIndicator(
-                              value: downloadProgress,
-                              strokeWidth: 3,
-                              backgroundColor: Colors.grey[300],
-                              color: Colors.deepPurple,
-                            ),
-                          ),
-                      ],
-                    ),
-                    title: Text("Unduh file assignment disini", style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
-                    onTap: () async {
-                      FileDownloader.downloadFile(
-                        url: assignment!.fileUrl!,
-                        onProgress: (name, progress) {
-                          setState(() {
-                            debugPrint("Download Progress: $progress");
-                            downloadProgress = progress / 100;
-                          });
-                        },
-                        onDownloadCompleted: (filePath) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Download Complete, saved in $filePath", style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
-                              action: SnackBarAction(
-                                label: "Open",
-                                onPressed: () => _openFile(filePath),
-                              ),
-                            ),
-                          );
-                          setState(() {
-                            downloadProgress = 0;
-                          });
-                        },
-                      );
-                    }
-                ) : SizedBox(),
                 Padding(
                   padding: EdgeInsets.all(16),
                   child: GestureDetector(
                     onTap: () async {
-                      final result = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                      );
-
-                      if (result == null) return;
-
-                      final fileSizeInMB = result.files.first.size / (1024 * 1024);
-
-                      if (fileSizeInMB > 5) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('File size must be 5MB or less', style: TextStyle(fontFamily: 'DIN_Next_Rounded'),)),
-                        );
-                      } else {
-                        setState(() {
-                          file = result.files.first;
-                        });
+                      if (file == null) {
+                        _pickFile();
                       }
                     },
-                    child: file == null
-                        ? _buildUploadBox()
-                        : _buildFilePreview(file!),
+                    child: file != null
+                        ? _buildFilePreview(file!)
+                        : (lastestSubmissionUrl != ''
+                            ? _buildSubmittedFilePreview(lastestSubmissionUrl)
+                            : _buildUploadBox()),
                   ),
                 ),
-                lastestSubmissionUrl != '' ? _buildExistingFile(lastestSubmissionUrl) : SizedBox(),
                 file == null ? SizedBox() :
                 !_isFileUploaded && !_isUserBadgeUpdated && !_isUserCourseUpdated ?
                 Column(
@@ -426,17 +392,15 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                           });
 
                           Duration difference = status.timeStarted.difference(status.timeFinished);
-                          print(user?.points);
-                          print(status.assignmentDone);
-                          print(complete);
-                          print("awoo");
                           if(!status.assignmentDone && !complete){
                             user?.points = user!.points! + calculatePoint(difference.inMinutes);
                           }
-                          if (idBadge != 0) {
-                            createUserBadge(user!.id, idBadge);
-                            user?.badges = user!.badges! + 1;
+
+                          if (widget.level == uc.currentChapter) {
+                            uc.currentChapter++;
+                            uc.progress = (((uc.currentChapter - 1) / chLength) * 100).toInt();
                           }
+
                           await uploadFile(file!);
                           await Future.wait([
                             updateUserPointsAndBadge(),
@@ -477,28 +441,60 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                   ],
                 ),
                 SizedBox(height: 10,),
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: SingleChildScrollView(
+                if (status.assignmentDone) 
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Text("Feedback", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded')),
-                        Text("Score : ${status.assignmentScore}", style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                        Row(
+                          children: [
+                            Icon(Icons.feedback_outlined, color: AppColors.primaryColor),
+                            SizedBox(width: 8),
+                            Text("Feedback & Nilai", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor)),
+                          ],
+                        ),
+                        Divider(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Score:", style: TextStyle(fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.w500)),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                "${status.assignmentScore}/100",
+                                style: TextStyle(fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Text("Komentar:", style: TextStyle(fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.w500)),
+                        SizedBox(height: 4),
                         Text(
-                          status.assignmentFeedback,
-                          style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                          status.assignmentFeedback.isEmpty ? "Belum ada feedback." : status.assignmentFeedback,
+                          style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.grey.shade700),
                         ),
                       ],
                     ),
                   ),
-                ),
               ],
             ),
           )
@@ -537,6 +533,91 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     );
   }
 
+  Widget _buildSubmittedFilePreview(String url) {
+    String fileName = url.split('/').last.replaceAll('%20', ' ');
+    String extension = fileName.split('.').last.toLowerCase();
+
+    return DottedBorder(
+      borderType: BorderType.RRect,
+      radius: Radius.circular(12),
+      color: AppColors.secondaryColor,
+      strokeWidth: 2,
+      child: Container(
+        width: double.infinity,
+        height: 300,
+        decoration: BoxDecoration(
+          color: AppColors.secondaryColor.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Image(
+                  image: AssetImage(
+                    extension == 'pdf'
+                        ? 'lib/assets/iconpdf.png'
+                        : (extension == 'jpg' || extension == 'jpeg' || extension == 'png')
+                        ? 'lib/assets/iconjpg.png'
+                        : 'lib/assets/empty.png',
+                  ),
+                  width: 80,
+                  height: 80,
+                ),
+                Container(
+                  padding: EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.check, color: Colors.white, size: 20),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Tersubmit',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.secondaryColor,
+                  fontFamily: 'DIN_Next_Rounded'
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                fileName,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontFamily: 'DIN_Next_Rounded'),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _downloadFile(url),
+                  icon: Icon(Icons.download, color: AppColors.primaryColor),
+                  label: Text('Download', style: TextStyle(color: AppColors.primaryColor, fontFamily: 'DIN_Next_Rounded')),
+                ),
+                SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _pickFile,
+                  icon: Icon(Icons.refresh, color: Colors.grey),
+                  label: Text('Ganti File', style: TextStyle(color: Colors.grey, fontFamily: 'DIN_Next_Rounded')),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilePreview(PlatformFile file) {
     return DottedBorder(
       borderType: BorderType.RRect,
@@ -564,48 +645,6 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExistingFile(String url) {
-    return GestureDetector(
-      onTap: () async {
-        FileDownloader.downloadFile(
-          url: url,
-          onDownloadCompleted: (filePath) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Download Complete, saved in $filePath", style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
-                action: SnackBarAction(
-                  label: "Open",
-                  onPressed: () => _openFile(filePath),
-                ),
-              ),
-            );
-          },
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.insert_drive_file, color: Colors.deepPurple),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                  url.split('/').last.replaceAll('%20', ' '),
-                  style: TextStyle(fontSize: 14, fontFamily: 'DIN_Next_Rounded'),
-                  overflow: TextOverflow.ellipsis
-              ),
-            ),
-          ],
         ),
       ),
     );
