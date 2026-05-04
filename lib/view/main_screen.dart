@@ -9,6 +9,7 @@ import '../global_var.dart';
 import '../service/api_cache_service.dart';
 import 'friends_screen.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
 import 'mycourse_screen.dart';
 
 Color purple = Color(0xFF441F7F);
@@ -38,6 +39,7 @@ class _MainState extends State<Mainscreen> {
   int _courseRefreshNonce = 0;
   int _profileTutorialReplayNonce = 0;
   Timer? _heartbeatTimer;
+  StreamSubscription? _apiErrorSubscription;
 
   final List<_TutorialStep> _tutorialSteps = const [
     _TutorialStep(
@@ -96,9 +98,28 @@ class _MainState extends State<Mainscreen> {
     pref = await SharedPreferences.getInstance();
     if (!mounted) return;
 
+    _apiErrorSubscription = ApiCacheService.errorController.stream.listen(_handleApiError);
+
     getCourseDetail();
     _maybeStartMainTutorial();
     _startHeartbeat();
+  }
+
+  void _handleApiError(String message) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
   }
 
   Future<void> _startHeartbeat() async {
@@ -132,6 +153,7 @@ class _MainState extends State<Mainscreen> {
   @override
   void dispose() {
     _heartbeatTimer?.cancel();
+    _apiErrorSubscription?.cancel();
     super.dispose();
   }
 

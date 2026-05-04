@@ -25,9 +25,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool _obscurePassword = true;
 
   void login() async {
     if (isLoading) return;
+
+    if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Username dan Password tidak boleh kosong", style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() => isLoading = true);
 
@@ -87,36 +98,39 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _launchEmail() async {
+    String encodeQueryParameters(Map<String, String> params) {
+      return params.entries
+          .map((MapEntry<String, String> e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value).replaceAll('+', '%20')}')
+          .join('&');
+    }
+
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'archicosemb@gmail.com',
-      queryParameters: {
+      path: 'siahaanralphael24@gmail.com',
+      query: encodeQueryParameters(<String, String>{
         'subject': 'Levelearn Mobile Help Request - Authentication',
-        'body': '''
-            Saya menulis email ini untuk meminta bantuan terkait [jelaskan masalah atau pertanyaan Anda secara singkat].
-
-            Berikut adalah detail masalah yang saya alami:
-            
-            * [Deskripsi masalah dengan jelas dan detail]
-            * [Langkah-langkah yang sudah Anda coba]
-            * [Informasi perangkat atau akun jika relevan]
-            
-            Saya berharap dapat segera mendapatkan solusi atau bantuan dari tim Anda.
-            
-            Terima kasih atas perhatian dan bantuannya.
-            
-            Hormat saya,
-            
-            [Nama Anda]
-            [Kontak (opsional)]
-        ''',
-      },
+        'body': 'Saya menulis email ini untuk meminta bantuan terkait [jelaskan masalah atau pertanyaan Anda secara singkat].\n\n'
+            'Berikut adalah detail masalah yang saya alami:\n\n'
+            '* [Deskripsi masalah dengan jelas dan detail]\n'
+            '* [Langkah-langkah yang sudah Anda coba]\n'
+            '* [Informasi perangkat atau akun jika relevan]\n\n'
+            'Saya berharap dapat segera mendapatkan solusi atau bantuan dari tim Anda.\n\n'
+            'Terima kasih atas perhatian dan bantuannya.\n\n'
+            'Hormat saya,\n\n'
+            '[Nama Anda]\n'
+            '[Kontak (opsional)]',
+      }),
     );
 
     if (await canLaunchUrl(emailLaunchUri)) {
       await launchUrl(emailLaunchUri);
     } else {
-      throw 'Tidak dapat meluncurkan email';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka aplikasi email')),
+        );
+      }
     }
   }
 
@@ -262,14 +276,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     Container(
-                                      padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                      padding: EdgeInsets.fromLTRB(16, 8, 8, 8),
                                       child: TextField(
                                         style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
                                         controller: passwordController,
                                         inputFormatters: [
                                           FilteringTextInputFormatter.deny(RegExp(r'\s')),
                                         ],
-                                        obscureText: true,
+                                        obscureText: _obscurePassword,
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Password",
@@ -277,6 +291,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                             color: Colors.grey.shade700,
                                             fontFamily: 'DIN_Next_Rounded',
                                             fontSize: baseFontSize,
+                                          ),
+                                          suffixIcon: IconButton(
+                                            icon: Icon(
+                                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                              color: AppColors.primaryColor.withOpacity(0.7),
+                                            ),
+                                            onPressed: () {
+                                              setState(() {
+                                                _obscurePassword = !_obscurePassword;
+                                              });
+                                            },
                                           ),
                                         ),
                                       ),

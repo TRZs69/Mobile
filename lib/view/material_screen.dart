@@ -12,12 +12,14 @@ import 'package:app/view/chatbot_screen.dart';
 class MaterialScreen extends StatefulWidget {
   final ChapterStatus status;
   final String chapterName;
+  final int level;
   final Function(bool) updateProgress;
   final Function(ChapterStatus) updateStatus;
   const MaterialScreen({
     super.key,
     required this.status,
     required this.chapterName,
+    required this.level,
     required this.updateProgress,
     required this.updateStatus
   });
@@ -32,6 +34,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
   double progressValue = 0.0;
   bool showDialogMaterialOnce = false;
   late ChapterStatus status;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -46,10 +49,19 @@ class _MaterialScreenState extends State<MaterialScreen> {
   }
 
   void getMaterial(int id) async {
-    final resultMaterial = await ChapterService.getMaterialByChapterId(id);
-    setState(() {
-      material = resultMaterial;
-    });
+    try {
+      final resultMaterial = await ChapterService.getMaterialByChapterId(id);
+      setState(() {
+        material = resultMaterial;
+        isLoading = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   updateProgressMaterial() {
@@ -136,7 +148,17 @@ class _MaterialScreenState extends State<MaterialScreen> {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-        if (material != null)
+        if (isLoading)
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('lib/assets/pictures/background-pattern.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        if (!isLoading && material != null)
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -159,7 +181,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
             ),
           ),
 
-        if (material == null)
+        if (!isLoading && material == null)
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -206,6 +228,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                     startFresh: true,
                     materialId: material!.id,
                     chapterId: widget.status.chapterId,
+                    chapterLevel: widget.level,
                   ),
                 ),
               );

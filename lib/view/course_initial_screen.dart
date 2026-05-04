@@ -284,6 +284,10 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
       width: 50,
       height: 50,
       fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
+      },
       errorBuilder: (_, __, ___) {
         return Image.asset('lib/assets/empty.png', width: 50, height: 50);
       },
@@ -392,58 +396,6 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
                         style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
                       ),
                       const SizedBox(height: 16),
-                      Card(
-                        color: Colors.white,
-                        elevation: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              listBadge.isEmpty
-                                  ? Text(
-                                      'Tidak ada badge pada Course ini.',
-                                      style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
-                                      textAlign: TextAlign.center,
-                                    )
-                                  : Expanded(
-                                      child: Wrap(
-                                        alignment: WrapAlignment.spaceEvenly,
-                                        spacing: 16,
-                                        runSpacing: 12,
-                                        children: [
-                                          if (listBadge.isNotEmpty)
-                                            Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                _badgeIcon(listBadge[0].image),
-                                                Text('Beginner', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
-                                              ],
-                                            ),
-                                          if (listBadge.length > 1)
-                                            Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                _badgeIcon(listBadge[1].image),
-                                                Text('Intermediate', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
-                                              ],
-                                            ),
-                                          if (listBadge.length > 2)
-                                            Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                _badgeIcon(listBadge[2].image),
-                                                Text('Advance', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
-                                              ],
-                                            ),
-                                        ],
-                                      ),
-                                    )
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                       const Text(
                         'Daftar Chapter',
                         style: TextStyle(
@@ -468,13 +420,6 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
                               minTileHeight: 72,
                               leading: Text('${index + 1}', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold, color: AppColors.primaryColor),),
                               title: Text(listChapter[index].name, style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
-                              trailing: listChapter[index].isCheckpoint == 1
-                                  ? Icon(LineAwesomeIcons.medal_solid, color: Colors.teal)
-                                  : listChapter[index].isCheckpoint == 2
-                                    ? Icon(LineAwesomeIcons.medal_solid, color: Colors.blueAccent)
-                                    : listChapter[index].isCheckpoint == 3
-                                      ? Icon(LineAwesomeIcons.medal_solid, color: Colors.red)
-                                      : null
                             ),
                           );
                         },

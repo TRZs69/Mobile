@@ -115,7 +115,15 @@ class _ProfileState extends State<ProfileScreen> {
         return;
       }
 
-      Student fetchedUser = await UserService.getUserById(idUser);
+      Student fetchedUser = await UserService.getUserById(
+        idUser,
+        onRevalidated: (freshUser) {
+          if (!mounted) return;
+          setState(() {
+            user = freshUser;
+          });
+        },
+      );
       if (!mounted) return;
       setState(() {
         user = fetchedUser;
@@ -410,19 +418,26 @@ class _ProfileState extends State<ProfileScreen> {
                           children: [
                             Stack(
                               children: [
-                                SizedBox(
+                                Container(
                                   width: 120,
                                   height: 120,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(100),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                  child: ClipOval(
                                     child: currentUser.image != "" && currentUser.image != null ? Image.network(
                                       currentUser.image!,
                                       fit: BoxFit.cover,
-                                      cacheWidth: 512,
-                                      cacheHeight: 512,
+                                      width: 120,
+                                      height: 120,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return const Center(child: CircularProgressIndicator());
+                                      },
                                       errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 100, color: Colors.white),
                                     )
-                                        : Icon(Icons.person, size: 100, color: Colors.white,),
+                                        : const Icon(Icons.person, size: 100, color: Colors.white,),
                                   ),
                                 ),
                               Positioned(
@@ -602,8 +617,10 @@ class _ProfileState extends State<ProfileScreen> {
                                       Image.network(
                                         userBadges![index].badge.image!,
                                         fit: BoxFit.cover,
-                                        cacheWidth: 256,
-                                        cacheHeight: 256,
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
+                                        },
                                         errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover),
                                       ) : Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover)
                                     ),
@@ -775,8 +792,10 @@ class _ProfileState extends State<ProfileScreen> {
                   Image.network(
                     badge.image!,
                     fit: BoxFit.cover,
-                    cacheWidth: 512,
-                    cacheHeight: 512,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
                     errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover),
                   ) : Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover),
                 ),

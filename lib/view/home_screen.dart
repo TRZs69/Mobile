@@ -774,7 +774,11 @@ class _HomeState extends State<HomeScreen> {
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.person,
                         size: 30,
                         color: Colors.white,
@@ -1124,6 +1128,10 @@ class _HomeState extends State<HomeScreen> {
                     ? Image.network(
                         course.image,
                         fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator());
+                        },
                         errorBuilder: (context, error, stackTrace) => Image.asset(
                           'lib/assets/pictures/imk-picture.jpg',
                           fit: BoxFit.cover,

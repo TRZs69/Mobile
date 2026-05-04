@@ -35,12 +35,14 @@ class ChatbotScreen extends StatefulWidget {
   final bool inheritSession;
   final int? materialId;
   final int? chapterId;
+  final int? chapterLevel;
   const ChatbotScreen({
     super.key,
     this.startFresh = false,
     this.inheritSession = false,
     this.materialId,
     this.chapterId,
+    this.chapterLevel,
   });
 
   @override
@@ -492,7 +494,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           icon: Icon(LineAwesomeIcons.angle_left_solid),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Levely', style: TextStyle(color: AppColors.appBarIconColor)),
+        title: Text(
+          widget.chapterLevel != null ? 'Levely - Chapter ${widget.chapterLevel}' : 'Levely',
+          style: const TextStyle(color: AppColors.appBarIconColor),
+        ),
         centerTitle: true,
       ),
       body: Column(

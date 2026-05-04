@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:app/model/login.dart';
-import 'package:http/http.dart' as http;
 import 'api_cache_service.dart';
 
 import '../global_var.dart';
@@ -94,10 +93,9 @@ class UserService {
         'username':username,
         'password':password
       };
-      final response = await http.post(Uri.parse('${GlobalVar.baseUrl}/login'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      } , body: jsonEncode(request));
+      // Login uses direct post because we handle timeout/errors locally in login_screen.dart
+      // and it doesn't have a token yet.
+      final response = await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/login'), body: request);
 
 
       if (response.statusCode == 200) {
@@ -125,6 +123,25 @@ class UserService {
     }
   }
 
+  static Future<Student> patchUser(Student user, Map<String, dynamic> patchData) async {
+    try {
+      final response = await ApiCacheService.patch(
+        Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'),
+        body: patchData,
+      );
+
+      if (response.statusCode != 200) {
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['message'] ?? 'Failed to patch user');
+      }
+
+      final result = jsonDecode(response.body);
+      return Student.fromJson(result['user']);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
   static Future<Student> updateUser(Student user) async {
     try {
       Map<String, dynamic> request = {
@@ -139,10 +156,7 @@ class UserService {
         "instructorId": user.instructorId,
         "instructorCourses": user.instructorCourses
       };
-      final response = await http.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      } , body: jsonEncode(request));
+      final response = await ApiCacheService.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), body: request);
 
       final body = response.body;
       final result = jsonDecode(body);
@@ -158,15 +172,7 @@ class UserService {
       Map<String, dynamic> request = {
         "password": user.password,
       };
-      final response =
-          await http.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'),
-              headers: {
-                'Content-type': 'application/json; charset=utf-8',
-                'Accept': 'application/json',
-              },
-              body: jsonEncode(request));
-
-      final body = response.body;
+      await ApiCacheService.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), body: request);
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -177,10 +183,7 @@ class UserService {
       Map<String, dynamic> request = {
         "points": user.points,
       };
-      final response = await http.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      } , body: jsonEncode(request));
+      final response = await ApiCacheService.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), body: request);
 
       final body = response.body;
       final result = jsonDecode(body);
@@ -196,10 +199,7 @@ class UserService {
       Map<String, dynamic> request = {
         "points": user.points,
       };
-      final response = await http.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      } , body: jsonEncode(request));
+      final response = await ApiCacheService.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), body: request);
 
       final body = response.body;
       final result = jsonDecode(body);
@@ -215,12 +215,7 @@ class UserService {
       Map<String, dynamic> request = {
         "image": user.image,
       };
-      final response = await http.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      } , body: jsonEncode(request));
-
-      final body = response.body;
+      await ApiCacheService.put(Uri.parse('${GlobalVar.baseUrl}/user/${user.id}'), body: request);
     } catch(e){
       throw Exception(e.toString());
     }

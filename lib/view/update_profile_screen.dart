@@ -13,6 +13,7 @@ import 'package:path/path.dart' as path;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:intl/intl.dart';
 
+import '../service/api_cache_service.dart';
 import '../service/user_service.dart';
 import '../utils/colors.dart';
 import 'login_screen.dart';
@@ -34,12 +35,15 @@ class _UpdateProfileState extends State<UpdateProfile> {
   TextEditingController passwordController = TextEditingController();
   bool hasChanges = false;
   bool passwordHasChanges = false;
+  bool isLoading = false;
   FilePickerResult? result;
 
   @override
   void initState() {
     _loadPreferences();
     user = widget.user;
+    nameController.text = user?.name ?? '';
+    usernameController.text = user?.username ?? '';
     super.initState();
   }
 
@@ -55,31 +59,9 @@ class _UpdateProfileState extends State<UpdateProfile> {
     prefs = await SharedPreferences.getInstance();
   }
 
-  Future<void> uploadPhotoProfile(XFile file, String filename) async {
-    final path = 'profile/$filename';
-
-    Uint8List bytes = await file.readAsBytes();
-
-    try {
-      await Supabase.instance.client.storage.from('images').uploadBinary(path, bytes);
-      final publicUrl = getPublicUrl(path);
-      if (kDebugMode) {
-        print(publicUrl);
-      }
-      setState(() {
-        user?.image = publicUrl;
-      });
-      hasChanges = true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Upload error: $e');
-      }
-    }
-  }
-
   String getPublicUrl(String filePath) {
     return Supabase.instance.client.storage
-        .from('images')
+        .from('profile_pictures')
         .getPublicUrl(filePath);
   }
 
@@ -96,10 +78,6 @@ class _UpdateProfileState extends State<UpdateProfile> {
       await prefs.setString('name', user!.name);
       await prefs.setString('role', user!.role);
     }
-  }
-
-  Future<void> updateUserPhoto() async {
-    await UserService.updateUserPhoto(user!);
   }
 
   Future<void> updatePassword() async {
@@ -133,7 +111,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => Mainscreen()),
+                    builder: (context) => Mainscreen(navIndex: 4)),
               );
             },
             icon: const Icon(LineAwesomeIcons.angle_left_solid, color: Colors.white)),
@@ -165,14 +143,18 @@ class _UpdateProfileState extends State<UpdateProfile> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(100),
                           child: photo != null
-                              ? (photo!.bytes != null
-                              ? Image.memory(photo!.bytes!, fit: BoxFit.cover)
-                              : Image.file(File(photo!.path!), fit: BoxFit.cover))
+                              ? Image.file(File(photo!.path!), fit: BoxFit.cover, width: 120, height: 120)
                               : (user?.image != null && user!.image!.isNotEmpty
                               ? Image.network(
                                   user!.image!,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Icon(Icons.person, size: 100, color: Colors.grey),
+                                  width: 120,
+                                  height: 120,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(child: CircularProgressIndicator());
+                                  },
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 100, color: Colors.grey),
                                 )
                               : Icon(Icons.person, size: 100, color: Colors.grey)),
                         ),
@@ -228,7 +210,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
                                   fontFamily: 'DIN_Next_Rounded',
                                 )
                             ),
-                            hintText: user?.name != null && user?.name != '' ? user!.name : "Name",
+                            hintText: "Enter your name",
                             prefixIcon: Icon(LineAwesomeIcons.person_booth_solid)
                         ),
                       ),
@@ -253,7 +235,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
                                   fontFamily: 'DIN_Next_Rounded',
                                 )
                             ),
-                            hintText: user?.username != null && user?.username != '' ? user!.username : "Username",
+                            hintText: "Enter your username",
                             prefixIcon: Icon(LineAwesomeIcons.user)
                         ),
                       ),
@@ -286,40 +268,94 @@ class _UpdateProfileState extends State<UpdateProfile> {
                         width: double.infinity,
                         height: 40,
                         child: ElevatedButton(
-                          onPressed: () async {
-                            if(photo != null) {
-                              final filename = '${photo?.name.split('.').first}_${user!.studentId}_${DateTime.now().millisecondsSinceEpoch}.${photo?.extension}';
-                              final compressedXFile = await compressImage(photo!);
+                          onPressed: isLoading ? null : () async {
+                            setState(() { 
+                              isLoading = true;
+                            });
+                            
+                            try {
+                              String? newPhotoUrl;
+                              if(photo != null) {
+                                final filename = '${photo?.name.split('.').first}_${user!.studentId}_${DateTime.now().millisecondsSinceEpoch}.${photo?.extension}';
+                                final compressedXFile = await compressImage(photo!);
 
-                              if (compressedXFile != null) {
-                                await uploadPhotoProfile(compressedXFile, filename);
+                                if (compressedXFile != null) {
+                                  final path = 'profile/$filename';
+                                  Uint8List bytes = await compressedXFile.readAsBytes();
+                                  await Supabase.instance.client.storage.from('profile_pictures').uploadBinary(path, bytes);
+                                  newPhotoUrl = getPublicUrl(path);
+                                }
                               }
-                            }
-                            String newName = nameController.text.trim();
-                            String newUsername = usernameController.text.trim();
-                            String newPassword = passwordController.text.trim();
+                              
+                              String newName = nameController.text.trim();
+                              String newUsername = usernameController.text.trim();
+                              String newPassword = passwordController.text.trim();
 
-                            if (newName.isNotEmpty && newName != user?.name) {
-                              user?.name = newName;
-                              hasChanges = true;
-                            }
-                            if (newUsername.isNotEmpty && newUsername != user?.username) {
-                              user?.username = newUsername;
-                              hasChanges = true;
-                            }
-                            if (newPassword.isNotEmpty && newPassword != user?.password) {
-                              user?.password = newPassword;
-                              hasChanges = true;
-                              passwordHasChanges = true;
-                            }
-
-                            if (hasChanges) {
-                              if (passwordHasChanges){
-                                await updatePassword();
+                              // Construct partial update payload
+                              Map<String, dynamic> patch = {};
+                              if (newName.isNotEmpty && newName != user?.name) patch['name'] = newName;
+                              if (newUsername.isNotEmpty && newUsername != user?.username) patch['username'] = newUsername;
+                              if (newPhotoUrl != null) patch['image'] = newPhotoUrl;
+                              
+                              if (newPassword.isNotEmpty) {
+                                await UserService.updatePassword(user!.copyWith(password: newPassword));
                               }
-                              await updateUserPhoto();
-                              await updateUser();
-                              showSuccessDialog(context);
+                              
+                              if (patch.isNotEmpty) {
+                                final updatedUser = await UserService.patchUser(user!, patch);
+                                
+                                // Update local state and SharedPreferences
+                                setState(() {
+                                  user = updatedUser;
+                                  photo = null; 
+                                });
+                                
+                                await prefs.setInt('userId', updatedUser.id);
+                                await prefs.setString('name', updatedUser.name);
+                                await prefs.setString('role', updatedUser.role);
+                                
+                                await ApiCacheService.clearCacheContaining('user/${updatedUser.id}');
+                              }
+                              
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Profil berhasil diperbarui", style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+
+                                // Return to profile screen after success
+                                Future.delayed(const Duration(milliseconds: 500), () {
+                                  if (mounted) {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => const Mainscreen(navIndex: 4)),
+                                    );
+                                  }
+                                });
+                              }                            } catch (e) {
+                              debugPrint("Update failed: $e");
+                              String errorMessage = "Gagal menyimpan perubahan";
+                              if (e.toString().contains("Username sudah digunakan")) {
+                                errorMessage = "Username sudah digunakan oleh pengguna lain.";
+                              }
+                              
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(errorMessage, style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                                      backgroundColor: Colors.red,
+                                    )
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -327,7 +363,13 @@ class _UpdateProfileState extends State<UpdateProfile> {
                             side: BorderSide.none,
                             shape: const StadiumBorder(),
                           ),
-                          child: Text("Save", style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          child: isLoading 
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : Text("Save", style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                               fontFamily: 'DIN_Next_Rounded',
                               color: Colors.white
                           ),)
@@ -335,7 +377,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
                       ),
                       const SizedBox(height: 16),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,37 +402,6 @@ class _UpdateProfileState extends State<UpdateProfile> {
                               ),
                             ],
                           ),
-                          ElevatedButton(
-                            onPressed: () async{
-                              await prefs.remove('userId');
-                              await prefs.remove('name');
-                              await prefs.remove('role');
-                              await prefs.remove('token');
-                              await prefs.remove('lastestSelectedCourse');
-                              await prefs.remove('latestSelectedCourse');
-                              await prefs.remove('getCourseDetail');
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => LoginScreen()),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent.withOpacity(0.1),
-                                elevation: 0,
-                                foregroundColor: Colors.red,
-                                shape: const StadiumBorder(),
-                                side: BorderSide.none
-                            ),
-                            child: Text("Delete", style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium!
-                                .copyWith(
-                                fontFamily: 'DIN_Next_Rounded',
-                                color: Colors.red
-                            ),
-                            ),
-                          )
                         ],
                       )
                     ],
@@ -401,31 +412,6 @@ class _UpdateProfileState extends State<UpdateProfile> {
           ),
         ],
       ),
-    );
-  }
-
-  void showSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Successful Update"),
-          content: Text("Akunmu sudah diperbaharui"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => Mainscreen(navIndex: 4)),
-                );
-              },
-              child: Text("OK"),
-            ),
-          ],
-        );
-      },
     );
   }
 }

@@ -19,6 +19,7 @@ class FriendsScreen extends StatefulWidget {
 class _FriendsScreen extends State<FriendsScreen> {
 
   List<Student> user = [];
+  bool isLoading = true;
 
   List<Student> sortUserByElo(List<Student> list) {
     final sorted = List<Student>.from(list);
@@ -33,17 +34,20 @@ class _FriendsScreen extends State<FriendsScreen> {
           if (!mounted) return;
           setState(() {
             user = freshData;
+            isLoading = false;
           });
         },
       );
       if (!mounted) return;
       setState(() {
         user = result;
+        isLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         user = [];
+        isLoading = false;
       });
     }
   }
@@ -88,12 +92,12 @@ class _FriendsScreen extends State<FriendsScreen> {
                    mainAxisSize: MainAxisSize.min,
                    children: [
                      Text('Papan Peringkat', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 24, fontFamily: 'DIN_Next_Rounded'),),
-                     _buildLeaderBoard(user),
+                     isLoading ? const SizedBox(height: 300, child: Center(child: CircularProgressIndicator(color: Colors.white))) : _buildLeaderBoard(user),
                    ],
                  ),
                ),
              ),
-             body: _listFriends(),
+             body: isLoading ? const Center(child: CircularProgressIndicator()) : _listFriends(),
            ) :
          Scaffold(
            backgroundColor: Colors.transparent,
@@ -125,13 +129,13 @@ class _FriendsScreen extends State<FriendsScreen> {
                                  fontFamily: 'DIN_Next_Rounded'
                              ),
                            ),
-                           _buildLeaderBoard(user),
+                           isLoading ? const SizedBox(height: 300, child: Center(child: CircularProgressIndicator(color: Colors.white))) : _buildLeaderBoard(user),
                          ],
                        ),
                      ),
                    ),
                  ),
-                 _listFriendsForLandscape(),
+                 isLoading ? const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())) : _listFriendsForLandscape(),
                ],
              ),
            ),

@@ -132,6 +132,7 @@ class _ChapterScreenState extends State<Chapterscreen>
               : MaterialScreen(
                   status: widget.status,
                   chapterName: widget.chapterName,
+                  level: widget.level,
                   updateProgress: updateProgress,
                   updateStatus: updateStatus,
                 );

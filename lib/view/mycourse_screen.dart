@@ -29,6 +29,7 @@ class _CourseDetail extends State<MycourseScreen> {
   List<Course> allCourses = [];
   List<Course> filteredCourses = [];
   bool _isFetchingCourses = false;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -54,6 +55,7 @@ class _CourseDetail extends State<MycourseScreen> {
       setState(() {
         allCourses = List<Course>.from(cached);
         filteredCourses = List<Course>.from(cached);
+        isLoading = false;
       });
     }
 
@@ -85,6 +87,7 @@ class _CourseDetail extends State<MycourseScreen> {
           setState(() {
             allCourses = freshData;
             filteredCourses = freshData;
+            isLoading = false;
           });
           _enrolledCache[id] = List<Course>.from(freshData);
         },
@@ -94,10 +97,16 @@ class _CourseDetail extends State<MycourseScreen> {
       setState(() {
         allCourses = result;
         filteredCourses = result;
+        isLoading = false;
       });
       _enrolledCache[id] = List<Course>.from(result);
     } catch (e) {
       debugPrint("Error fetching courses: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } finally {
       _isFetchingCourses = false;
     }
@@ -180,7 +189,9 @@ class _CourseDetail extends State<MycourseScreen> {
                 ),
               ),
             ),
-            body: _listCourse(),
+            body: isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : _listCourse(),
           ),
         ],
       )
@@ -272,6 +283,13 @@ class _CourseDetail extends State<MycourseScreen> {
               height: 100,
               width: double.infinity,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator(color: Colors.white,)),
+                );
+              },
               errorBuilder: (context, error, stackTrace) => Image.asset(
                 'lib/assets/pictures/imk-picture.jpg',
                 height: 100,
@@ -284,6 +302,13 @@ class _CourseDetail extends State<MycourseScreen> {
                     height: 100,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const SizedBox(
+                        height: 100,
+                        child: Center(child: CircularProgressIndicator(color: Colors.white,)),
+                      );
+                    },
                     errorBuilder: (context, error, stackTrace) => Image.asset(
                       'lib/assets/pictures/imk-picture.jpg',
                       height: 100,

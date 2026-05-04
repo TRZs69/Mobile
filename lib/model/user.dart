@@ -80,4 +80,44 @@ class Student {
       updatedAt: safeDate(json['updatedAt']),
     );
   }
+
+  Student copyWith({
+    int? id,
+    String? username,
+    String? password,
+    String? name,
+    String? role,
+    String? studentId,
+    int? points,
+    int? elo,
+    String? eloTitle,
+    int? totalCourses,
+    int? badges,
+    String? instructorId,
+    int? instructorCourses,
+    String? image,
+    int? rank,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Student(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      password: password ?? this.password,
+      name: name ?? this.name,
+      role: role ?? this.role,
+      studentId: studentId ?? this.studentId,
+      points: points ?? this.points,
+      elo: elo ?? this.elo,
+      eloTitle: eloTitle ?? this.eloTitle,
+      totalCourses: totalCourses ?? this.totalCourses,
+      badges: badges ?? this.badges,
+      instructorId: instructorId ?? this.instructorId,
+      instructorCourses: instructorCourses ?? this.instructorCourses,
+      image: image ?? this.image,
+      rank: rank ?? this.rank,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

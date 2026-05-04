@@ -335,6 +335,17 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
   }
 
   Widget _buildAssignmentContent() {
+    if (assignment == null) {
+      return Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('lib/assets/pictures/background-pattern.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return Container(
       decoration: BoxDecoration(
           image: DecorationImage(
@@ -349,7 +360,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             controller: ScrollController(),
             child: Column(
               children: [
-                assignment?.instruction == null ? CircularProgressIndicator() : _buildHTMLAssignment(),
+                _buildHTMLAssignment(),
                 Padding(
                   padding: EdgeInsets.all(16),
                   child: GestureDetector(

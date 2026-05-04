@@ -3,85 +3,42 @@ import 'dart:convert';
 import 'package:app/global_var.dart';
 import 'package:app/model/trade.dart';
 import 'package:app/model/user_trade.dart';
-import 'package:http/http.dart' as http;
 import 'api_cache_service.dart';
 
 class TradeService {
-  static Future<List<TradeModel>> getAllTrades({
-    void Function(List<TradeModel> freshData)? onRevalidated,
-  }) async {
+
+  static Future<List<TradeModel>> getAllTrades() async {
     try {
-      final uri = Uri.parse('${GlobalVar.baseUrl}/trade');
-      final response = await ApiCacheService.getSWR(
-        uri,
-        onRevalidated: (freshResponse) {
-          if (onRevalidated == null) {
-            return;
-          }
-          final freshResult = jsonDecode(freshResponse.body);
-          final freshTrades = List<TradeModel>.from(
-            freshResult.map((item) => TradeModel.fromJson(item)),
-          );
-          onRevalidated(freshTrades);
-        },
-      );
-      final body = response.body;
-      final result = jsonDecode(body);
-      List<TradeModel> trades = List<TradeModel>.from(
-        result.map(
-            (result) => TradeModel.fromJson(result)
-        ),
-      );
-      return trades;
-    } catch(e) {
+      final response = await ApiCacheService.get(Uri.parse('${GlobalVar.baseUrl}/trade'));
+      final result = jsonDecode(response.body);
+
+      return List<TradeModel>.from(result.map((item) => TradeModel.fromJson(item)));
+    } catch (error) {
+      throw Exception(error.toString());
+    }
+  }
+
+  static Future<void> createUserTrade(int userId, int tradeId, int badgeId) async{
+    try {
+      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/usertrade'), body: {
+        'userId': userId,
+        'tradeId': tradeId,
+        'badgeId': badgeId
+      });
+    } catch(e){
       throw Exception(e.toString());
     }
   }
 
-  static Future<void> createUserTrade(int userId, int tradeId, int badgeId) async {
+  static Future<List<UserTrade>> getUserTrade(int userId) async {
+    List<UserTrade> filteredUserTrade = [];
     try {
-      Map<String, dynamic> request = {
-        "userId": userId,
-        "tradeId": tradeId
-      };
-      final response = await http.post(Uri.parse('${GlobalVar.baseUrl}/usertrade'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      } , body: jsonEncode(request));
+      final response = await ApiCacheService.get(Uri.parse('${GlobalVar.baseUrl}/usertrade'));
+      final result = jsonDecode(response.body);
 
-      final body = response.body;
-      final result = jsonDecode(body);
-      print(result['message']);
-    } catch(e) {
-      throw Exception(e.toString());
-    }
-  }
-
-  static Future<List<UserTrade>> getUserTrade(
-    int userId, {
-    void Function(List<UserTrade> freshData)? onRevalidated,
-  }) async{
-    try {
-      List<UserTrade> filteredUserTrade = [];
-      final uri = Uri.parse('${GlobalVar.baseUrl}/usertrade');
-      final response = await ApiCacheService.getSWR(
-        uri,
-        onRevalidated: (freshResponse) {
-          if (onRevalidated == null) {
-            return;
-          }
-          final freshResult = jsonDecode(freshResponse.body);
-          final freshTrades = List<UserTrade>.from(
-            freshResult.map((item) => UserTrade.fromJson(item)),
-          ).where((trade) => trade.userId == userId).toList();
-          onRevalidated(freshTrades);
-        },
-      );
-      final body = response.body;
-      final result = jsonDecode(body);
       List<UserTrade> trades = List<UserTrade>.from(
         result.map(
-                (result) => UserTrade.fromJson(result)
+                (item) => UserTrade.fromJson(item)
         ),
       );
       for(UserTrade ut in trades){

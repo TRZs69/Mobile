@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:app/model/chapter_status.dart';
-import 'package:http/http.dart' as http;
+import 'api_cache_service.dart';
 
 import '../global_var.dart';
 
@@ -8,65 +8,57 @@ class UserChapterService {
 
   static Future<ChapterStatus> getChapterStatus(int idUser, int idChapter) async {
     try {
-      late ChapterStatus status;
-      final response = await http.get(Uri.parse('${GlobalVar.baseUrl}/userchapter/$idUser/$idChapter'));
-      final body = response.body;
-      final result = jsonDecode(body);
-      if (result is List && result.isNotEmpty) {
-        status = ChapterStatus.fromJson(result[0]);
+      final response = await ApiCacheService.get(Uri.parse('${GlobalVar.baseUrl}/userchapter/$idUser/$idChapter'));
+      
+      if(response.statusCode == 200) {
+        final body = response.body;
+        final result = jsonDecode(body);
+        return ChapterStatus.fromJson(result['data']);
       } else {
-         Map<String, dynamic> request = {
-           "userId": idUser,
-           "chapterId": idChapter,
-           "isCompleted": false,
-           "isStarted": false,
-           "materialDone": false,
-           "assessmentDone": false,
-           "assignmentDone": false,
-           "assessmentAnswer": "[]",
-           "submission": "",
-           "assessmentGrade": 0,
-           "timeStarted": DateTime.now().toUtc().toIso8601String(),
-           "timeFinished": DateTime.now().toUtc().toIso8601String()
-         };
-         final responsePost = await http.post(Uri.parse('${GlobalVar.baseUrl}/userchapter'), headers: {
-           'Content-type' : 'application/json; charset=utf-8',
-           'Accept': 'application/json',
-         }, body: jsonEncode(request));
-
-         if (responsePost.statusCode == 201) {
-           final body = responsePost.body;
-           final resultPost = jsonDecode(body);
-           status = ChapterStatus.fromJson(resultPost['userChapter']);
-         }
+        // Return a default status if none exists for this user/chapter yet
+        return ChapterStatus(
+          id: 0,
+          userId: idUser,
+          chapterId: idChapter,
+          isCompleted: false,
+          isStarted: false,
+          materialDone: false,
+          assessmentDone: false,
+          assignmentDone: false,
+          assessmentAnswer: [],
+          assessmentGrade: 0,
+          assessmentEloDelta: 0,
+          submission: '',
+          timeStarted: DateTime.now(),
+          timeFinished: DateTime.now(),
+          assignmentScore: 0,
+          assignmentFeedback: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
       }
-      return status;
     } catch(e){
       throw Exception(e.toString());
     }
   }
 
-  static Future<ChapterStatus> updateChapterStatus(int id, ChapterStatus user) async {
+  static Future<void> createUserChapter(int userId, int chapterId) async{
     try {
-      late ChapterStatus status;
-      Map<String, dynamic> request = {
-        "isStarted": user.isStarted,
-        "isCompleted": user.isCompleted,
-        "materialDone": user.materialDone,
-        "assessmentDone": user.assessmentDone,
-        "assignmentDone": user.assignmentDone,
-        "assessmentAnswer": jsonEncode(user.assessmentAnswer),
-        "submission": user.submission,
-        "assessmentGrade": user.assessmentGrade,
-        "assessmentPointsEarned": user.assessmentPointsEarned,
-        "timeStarted": user.timeStarted.toUtc().toIso8601String(),
-        "timeFinished": user.timeFinished.toUtc().toIso8601String(),
-      };
+      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userchapter'), body: {
+        'userId': userId,
+        'chapterId': chapterId
+      });
+    } catch(e){
+      throw Exception(e.toString());
+    }
+  }
 
-      final responsePut = await http.put(Uri.parse('${GlobalVar.baseUrl}/userchapter/$id'), headers: {
-        'Content-type' : 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-      }, body: jsonEncode(request));
+  static Future<ChapterStatus> updateChapterStatus(int id, ChapterStatus status) async {
+    try {
+      final responsePut = await ApiCacheService.put(
+        Uri.parse('${GlobalVar.baseUrl}/userchapter/$id'),
+        body: status.toJson(),
+      );
 
       if (responsePut.statusCode == 200) {
         final body = responsePut.body;

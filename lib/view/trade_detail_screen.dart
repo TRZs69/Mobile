@@ -181,6 +181,13 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
                     child: widget.trade.image.toLowerCase().startsWith('http')
                     ? Image.network(
                       widget.trade.image,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const SizedBox(
+                          height: 180,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      },
                       errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png'),
                       )
                         : Image.asset(widget.trade.image)
@@ -300,6 +307,13 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
                         widget.trade.image,
                         height: 180,
                         fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const SizedBox(
+                            height: 180,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        },
                         errorBuilder: (context, error, stackTrace) => Image.asset(
                           'lib/assets/pictures/icon.png',
                           height: 180,

@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiCacheService {
+  static final StreamController<String> errorController = StreamController<String>.broadcast();
+  static const Duration _timeout = Duration(seconds: 15);
+
   static String cacheKeyFor(Uri url) => 'api_cache_${url.toString()}';
 
   static Future<void> clearCacheForUrl(Uri url) async {
@@ -32,14 +36,15 @@ class ApiCacheService {
     };
   }
 
-  static Future<void> _handle401Error() async {
+  static Future<void> _handleCriticalError(String message) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('userId');
     await prefs.remove('name');
     await prefs.remove('role');
     await prefs.remove('sessionId');
-    // Navigation to login screen should be handled by the calling widget
+    
+    errorController.add(message);
   }
 
   static Future<http.Response> forceRefresh(
@@ -80,19 +85,29 @@ class ApiCacheService {
       required SharedPreferences prefs, 
       required String cacheKey}
   ) async {
-    final authHeaders = await _getAuthHeaders();
-    final allHeaders = {...authHeaders, ...?headers};
-    final response = await http.get(url, headers: allHeaders);
-    
-    // Handle 401 errors
-    if (response.statusCode == 401) {
-      await _handle401Error();
+    try {
+      final authHeaders = await _getAuthHeaders();
+      final allHeaders = {...authHeaders, ...?headers};
+      final response = await http.get(url, headers: allHeaders).timeout(_timeout);
+      
+      // Handle 401 errors
+      if (response.statusCode == 401) {
+        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+      }
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        await prefs.setString(cacheKey, response.body);
+      }
+      return response;
+    } on TimeoutException catch (_) {
+      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
+      rethrow;
+    } on SocketException catch (_) {
+      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      rethrow;
+    } catch (e) {
+      rethrow;
     }
-    
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      await prefs.setString(cacheKey, response.body);
-    }
-    return response;
   }
 
   static Future<http.Response> getSWR(
@@ -123,15 +138,93 @@ class ApiCacheService {
 
     return _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey);
   }
+
   static Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body}) async {
-    final authHeaders = await _getAuthHeaders();
-    final allHeaders = {...authHeaders, ...?headers};
-    final response = await http.post(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null);
-    
-    // Handle 401 errors
-    if (response.statusCode == 401) {
-      await _handle401Error();
+    try {
+      final authHeaders = await _getAuthHeaders();
+      final allHeaders = {...authHeaders, ...?headers};
+      final response = await http.post(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
+      
+      // Handle 401 errors
+      if (response.statusCode == 401) {
+        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+      }
+      
+      return response;
+    } on TimeoutException catch (_) {
+      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
+      rethrow;
+    } on SocketException catch (_) {
+      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      rethrow;
+    } catch (e) {
+      rethrow;
     }
-    
-    return response;
-  }}
+  }
+
+  static Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body}) async {
+    try {
+      final authHeaders = await _getAuthHeaders();
+      final allHeaders = {...authHeaders, ...?headers};
+      final response = await http.put(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
+      
+      if (response.statusCode == 401) {
+        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+      }
+      
+      return response;
+    } on TimeoutException catch (_) {
+      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
+      rethrow;
+    } on SocketException catch (_) {
+      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body}) async {
+    try {
+      final authHeaders = await _getAuthHeaders();
+      final allHeaders = {...authHeaders, ...?headers};
+      final response = await http.patch(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
+      
+      if (response.statusCode == 401) {
+        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+      }
+      
+      return response;
+    } on TimeoutException catch (_) {
+      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
+      rethrow;
+    } on SocketException catch (_) {
+      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<http.Response> delete(Uri url, {Map<String, String>? headers}) async {
+    try {
+      final authHeaders = await _getAuthHeaders();
+      final allHeaders = {...authHeaders, ...?headers};
+      final response = await http.delete(url, headers: allHeaders).timeout(_timeout);
+      
+      if (response.statusCode == 401) {
+        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+      }
+      
+      return response;
+    } on TimeoutException catch (_) {
+      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
+      rethrow;
+    } on SocketException catch (_) {
+      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      rethrow;
+    } catch (e) {
+      rethrow;
+    }
+  }
+}

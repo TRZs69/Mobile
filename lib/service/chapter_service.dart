@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:app/global_var.dart';
 import 'package:app/model/assignment.dart';
 import 'package:app/model/assessment_attempt.dart';
-import 'package:http/http.dart' as http;
 import 'api_cache_service.dart';
 import '../model/assessment.dart';
 import '../model/chapter.dart';
@@ -86,7 +85,7 @@ class ChapterService {
       );
       final body = response.body;
       final result = jsonDecode(body);
-      LearningMaterial chapter = LearningMaterial(
+      LearningMaterial material = LearningMaterial(
         id: result['id'],
         chapterId: result['chapterId'],
         name: result['name'],
@@ -94,7 +93,7 @@ class ChapterService {
         createdAt: DateTime.parse(result['createdAt']),
         updatedAt: DateTime.parse(result['updatedAt']),
       );
-      return chapter;
+      return material;
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -148,7 +147,7 @@ class ChapterService {
       );
       final result = jsonDecode(response.body);
 
-      if (result.isEmpty) {
+      if (result == null || (result is List && result.isEmpty)) {
         throw Exception("No assessments found");
       }
 
@@ -193,14 +192,13 @@ class ChapterService {
       int chapterId, int userId,
       {bool forceNew = false}) async {
     try {
-      final response = await http.post(
+      final response = await ApiCacheService.post(
         Uri.parse('${GlobalVar.baseUrl}/assessment/attempt/start'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        body: {
           'userId': userId,
           'chapterId': chapterId,
           'forceNew': forceNew,
-        }),
+        },
       );
 
       final dynamic result = jsonDecode(response.body);
@@ -224,13 +222,12 @@ class ChapterService {
   static Future<AssessmentAttempt> prefetchAssessmentAttempt(
       int chapterId, int userId) async {
     try {
-      final response = await http.post(
+      final response = await ApiCacheService.post(
         Uri.parse('${GlobalVar.baseUrl}/assessment/attempt/prefetch'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        body: {
           'userId': userId,
           'chapterId': chapterId,
-        }),
+        },
       );
 
       final dynamic result = jsonDecode(response.body);
@@ -259,16 +256,15 @@ class ChapterService {
     required String answer,
   }) async {
     try {
-      final response = await http.post(
+      final response = await ApiCacheService.post(
         Uri.parse('${GlobalVar.baseUrl}/assessment/attempt/answer'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        body: {
           'userId': userId,
           'chapterId': chapterId,
           'attemptId': attemptId,
           'questionId': questionId,
           'answer': answer,
-        }),
+        },
       );
 
       final dynamic result = jsonDecode(response.body);
@@ -292,7 +288,7 @@ class ChapterService {
   static Future<AssessmentAttempt?> getCurrentAssessmentAttempt(
       int chapterId, int userId) async {
     try {
-      final response = await http.get(
+      final response = await ApiCacheService.get(
         Uri.parse(
             '${GlobalVar.baseUrl}/assessment/attempt/current?userId=$userId&chapterId=$chapterId'),
       );
@@ -326,7 +322,7 @@ class ChapterService {
   static Future<AssessmentAttempt?> getLatestAssessmentAttempt(
       int chapterId, int userId) async {
     try {
-      final response = await http.get(
+      final response = await ApiCacheService.get(
         Uri.parse(
             '${GlobalVar.baseUrl}/assessment/attempt/latest?userId=$userId&chapterId=$chapterId'),
       );
@@ -375,7 +371,7 @@ class ChapterService {
       );
       final result = jsonDecode(response.body);
 
-      if (result.isEmpty) {
+      if (result == null || (result is Map && result.isEmpty)) {
         throw Exception("No assignment found");
       }
 
@@ -405,7 +401,7 @@ class ChapterService {
       );
       final result = jsonDecode(response.body);
 
-      if (result.isEmpty) {
+      if (result == null || (result is Map && result.isEmpty)) {
         throw Exception("No Chapter found");
       }
 
@@ -421,15 +417,11 @@ class ChapterService {
       String reference, String answer) async {
     Map<String, dynamic> request = {'reference': reference, 'essay': answer};
     try {
-      final response = await http.post(Uri.parse(GlobalVar.similiarityEssayUrl),
-          headers: {
-            'Content-type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode(request));
+      final response = await ApiCacheService.post(Uri.parse(GlobalVar.similiarityEssayUrl),
+          body: request);
       final result = jsonDecode(response.body);
 
-      if (result.isEmpty) {
+      if (result == null || (result is Map && result.isEmpty)) {
         throw Exception("No Chapter found");
       }
 
