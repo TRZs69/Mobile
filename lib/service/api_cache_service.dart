@@ -100,10 +100,8 @@ class ApiCacheService {
       }
       return response;
     } on TimeoutException catch (_) {
-      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
       rethrow;
     } on SocketException catch (_) {
-      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
       rethrow;
     } catch (e) {
       rethrow;
@@ -152,10 +150,8 @@ class ApiCacheService {
       
       return response;
     } on TimeoutException catch (_) {
-      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
       rethrow;
     } on SocketException catch (_) {
-      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
       rethrow;
     } catch (e) {
       rethrow;
@@ -174,10 +170,8 @@ class ApiCacheService {
       
       return response;
     } on TimeoutException catch (_) {
-      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
       rethrow;
     } on SocketException catch (_) {
-      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
       rethrow;
     } catch (e) {
       rethrow;
@@ -196,10 +190,8 @@ class ApiCacheService {
       
       return response;
     } on TimeoutException catch (_) {
-      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
       rethrow;
     } on SocketException catch (_) {
-      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
       rethrow;
     } catch (e) {
       rethrow;
@@ -218,10 +210,8 @@ class ApiCacheService {
       
       return response;
     } on TimeoutException catch (_) {
-      await _handleCriticalError("Waktu koneksi habis. Silakan periksa koneksi internet Anda.");
       rethrow;
     } on SocketException catch (_) {
-      await _handleCriticalError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
       rethrow;
     } catch (e) {
       rethrow;

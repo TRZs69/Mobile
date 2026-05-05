@@ -50,7 +50,16 @@ class _MaterialScreenState extends State<MaterialScreen> {
 
   void getMaterial(int id) async {
     try {
-      final resultMaterial = await ChapterService.getMaterialByChapterId(id);
+      final resultMaterial = await ChapterService.getMaterialByChapterId(
+        id,
+        onRevalidated: (freshMaterial) {
+          if (mounted) {
+            setState(() {
+              material = freshMaterial;
+            });
+          }
+        },
+      );
       setState(() {
         material = resultMaterial;
         isLoading = false;
