@@ -64,6 +64,8 @@ class _SessionTimeoutWrapperState extends State<SessionTimeoutWrapper> with Widg
     _startTimer();
   }
 
+  DateTime? _lastRecordedTime;
+
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer(widget.timeout, _handleTimeout);
@@ -71,8 +73,13 @@ class _SessionTimeoutWrapperState extends State<SessionTimeoutWrapper> with Widg
   }
 
   Future<void> _recordActivity() async {
+    final now = DateTime.now();
+    if (_lastRecordedTime != null && now.difference(_lastRecordedTime!).inSeconds < 5) {
+      return; // Throttle to max once every 5 seconds
+    }
+    _lastRecordedTime = now;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastActivityKey, DateTime.now().toIso8601String());
+    await prefs.setString(_lastActivityKey, now.toIso8601String());
   }
 
   void _handleTimeout() async {

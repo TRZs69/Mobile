@@ -89,15 +89,14 @@ class _MaterialScreenState extends State<MaterialScreen> {
           showCompletionDialog(context, "Yeay kamu berhasil menyelesaikan Materi, Ayo lanjutkan ke bagian Assessment", false, false);
         });
         showDialogMaterialOnce = true;
+        
+        // Hanya panggil update status SATU KALI saat pertama kali mencapai bawah
+        widget.updateProgress(true);
+        status.materialDone = true;
+        widget.updateStatus(status);
+        updateStatus();
       }
     });
-
-    if (progressValue >= 1.0) {
-      widget.updateProgress(true);
-      status.materialDone = true;
-      widget.updateStatus(status);
-      updateStatus();
-    }
   }
 
   Future<void> updateStatus() async {
