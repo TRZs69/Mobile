@@ -22,7 +22,7 @@ class GlobalVar {
       return envBaseUrl;
     }
 
-    return 'https://backend-render-proxy.onrender.com/api';
+    return 'https://levelearn-backend-2.onrender.com/api';
   }
 }
 
