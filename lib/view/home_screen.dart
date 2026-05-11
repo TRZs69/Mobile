@@ -808,7 +808,7 @@ class _HomeState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChatbotScreen(startFresh: true)),
+            MaterialPageRoute(builder: (context) => const ChatbotScreen(startFresh: false)),
           );
         },
         style: ElevatedButton.styleFrom(
