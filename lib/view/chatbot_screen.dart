@@ -4,31 +4,21 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fetch_client/fetch_client.dart';
 import 'package:cupertino_http/cupertino_http.dart';
 import 'package:cronet_http/cronet_http.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
 import 'package:app/global_var.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/view/chat_session_api.dart';
-
-class ChatMessage {
-  String? id;
-  final ValueNotifier<String> contentNotifier;
-  final bool isUser;
-
-  ChatMessage({this.id, required String content, required this.isUser})
-      : contentNotifier = ValueNotifier(content);
-      
-  String get content => contentNotifier.value;
-  set content(String val) => contentNotifier.value = val;
-}
+import 'package:app/model/chat_message.dart';
+import 'package:app/view/widgets/chat_bubble.dart';
 
 class ChatbotScreen extends StatefulWidget {
   final bool startFresh;
@@ -121,7 +111,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _controller.dispose();
     _searchController.dispose();
     for (var msg in _messages) {
-      msg.contentNotifier.dispose();
+      msg.dispose();
     }
     super.dispose();
   }
@@ -300,9 +290,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
       final finalReply = reply.trim().isEmpty ? _fallbackAssistantReply : reply.trim();
       
-      // Note: assistantIndex is already synced in _streamAssistantReply via _updateAssistantMessage
-      // and IDs are synced via _persistMessageIds
-      
       setState(() {
         _activeStreamIndex = null;
         _streamHasProducedContent = false;
@@ -394,8 +381,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               if (delta != null && delta.isNotEmpty) {
                 replyBuffer += delta;
                 _updateAssistantMessage(assistantIndex, replyBuffer);
-                // CRITICAL: Dart buffers HTTP/2 responses. We force a highly visible 40ms typewriter delay 
-                // so even if chunks arrive all at once at the end, it still visually streams for the user.
                 await Future.delayed(const Duration(milliseconds: 40));
               }
 
@@ -441,7 +426,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   void _updateAssistantMessage(int index, String content) {
     if (!mounted || index < 0 || index >= _messages.length) return;
     
-    // Check if we need to hide the loading/placeholder state
     if (_activeStreamIndex == index && content.isNotEmpty && !_thinkingPlaceholders.contains(content)) {
       if (!_streamHasProducedContent) {
         setState(() {
@@ -450,8 +434,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         });
       }
     }
-    
-    // Targeted update via Notifier (No setState here for performance!)
     _messages[index].content = content;
   }
 
@@ -507,24 +489,124 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             child: _messages.isEmpty
               ? (_isLoadingHistory ? const Center(child: CircularProgressIndicator()) : _buildEmptyState())
               : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  if (index >= _messages.length) return const SizedBox.shrink();
-                  final msg = _messages[index];
-                  return _ChatBubble(
-                    message: msg,
-                    isStreaming: index == _activeStreamIndex,
-                    showIndicator: index == _activeStreamIndex && !_streamHasProducedContent,
-                    onEdit: (msg.isUser && msg.id != null && !_isSending) ? () => _showEditDialog(index) : null,
-                  );
-                },
-              ),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    if (index >= _messages.length) return const SizedBox.shrink();
+                    final msg = _messages[index];
+                    return ChatBubble(
+                      message: msg,
+                      isStreaming: index == _activeStreamIndex,
+                      showIndicator: index == _activeStreamIndex && !_streamHasProducedContent,
+                      onLongPress: (msg.isUser && msg.id != null && !_isSending) ? () => _showUserMessageOptions(index) : null,
+                      onRetry: (!msg.isUser && index > 0 && _messages[index - 1].isUser && _messages[index - 1].id != null && !_isSending)
+                          ? () => _confirmRetry(index - 1, _messages[index - 1].content)
+                          : null,
+                      thinkingPlaceholders: _thinkingPlaceholders,
+                    );
+                  },
+                ),
           ),
           _buildInputArea(),
         ],
       ),
       endDrawer: _buildDrawer(),
+    );
+  }
+
+  void _showUserMessageOptions(int index) {
+    final msg = _messages[index];
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit Pesan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showEditDialog(index);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy_all_outlined),
+                title: const Text('Salin Pesan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Clipboard.setData(ClipboardData(text: msg.content));
+                  _showSnack('Pesan disalin ke clipboard');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.select_all_rounded),
+                title: const Text('Pilih Teks'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSelectTextDialog(msg.content);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmRetry(int userIndex, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Retry Respons?'),
+        content: const Text(
+            'Pesan ini dan semua pesan setelahnya akan dihapus, lalu Levely akan memberikan jawaban baru. Lanjutkan?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _editAndRegenerate(userIndex, content);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSelectTextDialog(String text) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pilih Teks'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SelectionArea(
+            child: SingleChildScrollView(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontFamily: 'DIN_Next_Rounded',
+                  fontSize: 16,
+                  height: 1.4,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -572,15 +654,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     setState(() {
       _isSending = true;
-      // 1. Remove all messages after this one in the local UI
       if (index + 1 < _messages.length) {
         _messages.removeRange(index + 1, _messages.length);
       }
-      // 2. Update the message content
       _messages[index].content = newText;
       _syncHistoryFromMessages(_messages);
 
-      // 3. Add placeholder for new response
       _messages.add(ChatMessage(content: placeholder, isUser: false));
       assistantIndex = _messages.length - 1;
       _activeStreamIndex = assistantIndex;
@@ -675,7 +754,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
 
-            // Aggressive JSON extraction
             final startIdx = dataStr.indexOf('{');
             final endIdx = dataStr.lastIndexOf('}');
             if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
@@ -864,7 +942,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     return Drawer(
       child: Column(
         children: [
-          // Absolute top: Search Bar
           Padding(
             padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 8),
             child: TextField(
@@ -895,7 +972,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               },
             ),
           ),
-          // Followed by New Chat button
           ListTile(
             leading: SvgPicture.asset(
               'lib/assets/vectors/levely_new_chat.svg',
@@ -956,115 +1032,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       )
     ),
   );
-}
-
-class _ChatBubble extends StatelessWidget {
-  final ChatMessage message;
-  final bool isStreaming;
-  final bool showIndicator;
-  final VoidCallback? onEdit;
-  const _ChatBubble({required this.message, required this.isStreaming, required this.showIndicator, this.onEdit});
-
-  @override
-  Widget build(BuildContext context) {
-    final isUser = message.isUser;
-    return GestureDetector(
-      onLongPress: onEdit,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isUser) ...[
-              ValueListenableBuilder<String>(
-                valueListenable: message.contentNotifier,
-                builder: (context, content, _) => _buildAvatar(content),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-                decoration: BoxDecoration(
-                  color: isUser ? AppColors.primaryColor : AppColors.accentColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [
-                    ValueListenableBuilder<String>(
-                      valueListenable: message.contentNotifier,
-                      builder: (context, content, _) {
-                        return isUser 
-                          ? Text(content, style: const TextStyle(color: Colors.white, fontFamily: 'DIN_Next_Rounded', fontSize: 16, height: 1.4))
-                          : (isStreaming 
-                              ? Text(content, style: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', fontSize: 16, height: 1.4))
-                              : MarkdownBody(
-                                  data: content,
-                                  styleSheet: MarkdownStyleSheet(
-                                    p: const TextStyle(color: Colors.black87, fontFamily: 'DIN_Next_Rounded', fontSize: 16, height: 1.4),
-                                    code: const TextStyle(backgroundColor: Colors.black12, fontFamily: 'monospace'),
-                                  ),
-                                ));
-                      }
-                    ),
-                    if (showIndicator) const Padding(padding: EdgeInsets.only(top: 6), child: _TypingIndicator()),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar(String content) {
-    String asset = 'lib/assets/vectors/levely_smile.svg';
-    if (showIndicator) {
-      asset = 'lib/assets/vectors/levely_thinking.svg';
-    } else if (content.startsWith('Error:') || content.contains('Maaf, aku belum bisa menjawab.')) {
-      asset = 'lib/assets/vectors/levely_error.svg';
-    }
-
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: AppColors.accentColor.withOpacity(0.2),
-        shape: BoxShape.circle,
-      ),
-      padding: const EdgeInsets.all(6),
-      child: SvgPicture.asset(asset),
-    );
-  }
-}
-
-class _TypingIndicator extends StatefulWidget {
-  const _TypingIndicator();
-  @override
-  State<_TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  @override
-  void initState() { super.initState(); _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(); }
-  @override
-  void dispose() { _controller.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (_, __) {
-        final dots = 1 + ((_controller.value * 3).floor() % 3);
-        return Text(List.filled(dots, '•').join(' '), style: const TextStyle(fontSize: 14, color: Colors.black54, letterSpacing: 2));
-      },
-    );
-  }
 }
 
 class _PartialStreamResult implements Exception {
