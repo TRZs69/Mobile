@@ -138,28 +138,6 @@ class AssessmentAttempt {
   }
 
   static Question _questionFromJson(Map<String, dynamic> map) {
-    final optionsRaw = map['options'];
-    final options = optionsRaw is List
-        ? optionsRaw.map((item) => item.toString()).toList()
-        : <String>[];
-    final question = Question(
-      id: map['id'] is int ? map['id'] as int : int.tryParse('${map['id']}'),
-      question: (map['question'] ?? '').toString(),
-      option: options,
-      correctedAnswer: (map['correctedAnswer'] ?? map['answer'] ?? '').toString(),
-      type: (map['type'] ?? 'MC').toString(),
-      elo: map['elo'] is int ? map['elo'] as int : int.tryParse('${map['elo']}') ?? 1200,
-    );
-
-    final submittedAnswer = (map['submittedAnswer'] ?? '').toString();
-    if (submittedAnswer.isNotEmpty) {
-      question.selectedAnswer = submittedAnswer;
-    }
-
-    question.isCorrect = map['isCorrect'] == true;
-    question.score = map['score'] is int
-        ? map['score'] as int
-        : int.tryParse('${map['score']}') ?? 0;
-    return question;
+    return Question.fromJson(map);
   }
 }

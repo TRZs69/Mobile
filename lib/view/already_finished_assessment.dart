@@ -147,7 +147,13 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   Future<bool> _calculateResults() async {
     tapped = true;
     correctAnswer = 0;
-    final questions = question?.questions ?? [];
+    
+    // Filter to only include questions that were actually served to the user
+    final questions = (question?.questions ?? [])
+        .where((q) => q.servedOrder != null)
+        .toList()
+      ..sort((a, b) => (a.servedOrder ?? 0).compareTo(b.servedOrder ?? 0));
+
     if (questions.isEmpty) {
       point = status.assessmentGrade;
       return true;

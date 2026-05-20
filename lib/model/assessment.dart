@@ -38,6 +38,7 @@ class Question {
   String correctedAnswer;
   String type;
   int elo;
+  int? servedOrder;
   String _selectedAnswer = '';
   int score = 0;
   List<String> _selectedMultiAnswer = [];
@@ -50,7 +51,37 @@ class Question {
     required this.correctedAnswer,
     required this.type,
     this.elo = 1200,
+    this.servedOrder,
   });
+
+  factory Question.fromJson(Map<String, dynamic> map) {
+    final optionsRaw = map['options'] ?? map['option'];
+    final options = optionsRaw is List
+        ? optionsRaw.map((e) => e.toString()).toList()
+        : <String>[];
+    
+    final q = Question(
+      id: map['id'] is int ? map['id'] as int : int.tryParse('${map['id']}'),
+      question: (map['question'] ?? '').toString(),
+      option: options,
+      correctedAnswer:
+          (map['correctedAnswer'] ?? map['answer'] ?? '').toString(),
+      type: (map['type'] ?? 'MC').toString(),
+      elo: map['elo'] is int
+          ? map['elo'] as int
+          : int.tryParse('${map['elo']}') ?? 1200,
+      servedOrder: map['servedOrder'] is int ? map['servedOrder'] as int : null,
+    );
+    
+    final submitted = (map['submittedAnswer'] ?? '').toString();
+    if (submitted.isNotEmpty) {
+      q.selectedAnswer = submitted;
+    }
+    q.isCorrect = map['isCorrect'] == true;
+    q.score = map['score'] is int ? map['score'] as int : 0;
+    
+    return q;
+  }
 
   String get selectedAnswer => _selectedAnswer;
   List<String> get selectedMultAnswer => _selectedMultiAnswer;

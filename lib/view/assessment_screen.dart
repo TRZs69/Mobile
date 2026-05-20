@@ -342,7 +342,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           : 0;
       _upsertServedQuestion(current);
 
-      // LIVE SYNC: Clear global caches after every question to ensure "instant" updates across the app.
       HomeScreen.clearCaches();
       ApiCacheService.clearCacheContaining('/user');
 
@@ -400,11 +399,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Future<void> _reloadLatestAttemptForResult() async {
     if (user == null) return;
     try {
-      // Clear cache for the latest attempt endpoint to ensure we get the fresh one
-      await ApiCacheService.clearCacheContaining('assessment/attempt/latest');
-      
+      // Use forceRefresh: true to bypass cache and ensure we get the fresh submitted attempt.
+      // This prevents the UI from falling back to the 23-question bank shown in 1.png.
       final latestAttempt = await ChapterService.getLatestAssessmentAttempt(
-          status.chapterId, user!.id);
+          status.chapterId, user!.id, forceRefresh: true);
       if (!mounted || latestAttempt == null) return;
       setState(() {
         _servedQuestions = latestAttempt.questions.map(_copyQuestion).toList();
@@ -514,6 +512,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       correctedAnswer: source.correctedAnswer,
       type: source.type,
       elo: source.elo,
+      servedOrder: source.servedOrder,
     );
     copy.selectedAnswer = source.selectedAnswer;
     copy.selectedMultiAnswer = List<String>.from(source.selectedMultAnswer);
@@ -523,30 +522,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Question _questionFromJson(Map<String, dynamic> map) {
-    final optionsRaw = map['options'];
-    final options = optionsRaw is List
-        ? optionsRaw.map((e) => e.toString()).toList()
-        : <String>[];
-    final q = Question(
-      id: map['id'] is int ? map['id'] as int : int.tryParse('${map['id']}'),
-      question: (map['question'] ?? '').toString(),
-      option: options,
-      correctedAnswer:
-          (map['correctedAnswer'] ?? map['answer'] ?? '').toString(),
-      type: (map['type'] ?? 'MC').toString(),
-      elo: map['elo'] is int
-          ? map['elo'] as int
-          : int.tryParse('${map['elo']}') ?? 1200,
-    );
-    final submitted = (map['submittedAnswer'] ?? '').toString();
-    if (submitted.isNotEmpty) {
-      q.selectedAnswer = submitted;
-    }
-    q.isCorrect = map['isCorrect'] == true;
-    q.score = map['score'] is int
-        ? map['score'] as int
-        : int.tryParse('${map['score']}') ?? 0;
-    return q;
+    return Question.fromJson(map);
   }
 
   void _upsertServedQuestion(Question question) {
@@ -988,8 +964,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Widget _buildDetailedQuestions() {
+    final visibleQuestions = _servedQuestions
+        .where((q) => q.servedOrder != null)
+        .toList()
+      ..sort((a, b) => (a.servedOrder ?? 0).compareTo(b.servedOrder ?? 0));
+
     return Column(
-      children: _servedQuestions.asMap().entries.map((entry) {
+      children: visibleQuestions.asMap().entries.map((entry) {
         final i = entry.key;
         final q = entry.value;
         final pts = _gamificationPoints[i] ?? 0;
@@ -1056,8 +1037,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   Widget _buildResultView() {
     _calculateGamificationPoints();
+    final visibleQuestions =
+        _servedQuestions.where((q) => q.servedOrder != null).toList();
     final objectiveTotal =
-        _servedQuestions.where((q) => q.type.toUpperCase() != 'EY').length;
+        visibleQuestions.where((q) => q.type.toUpperCase() != 'EY').length;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
