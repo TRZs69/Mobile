@@ -342,6 +342,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           : 0;
       _upsertServedQuestion(current);
 
+      // LIVE SYNC: Clear global caches after every question to ensure "instant" updates across the app.
+      HomeScreen.clearCaches();
+      ApiCacheService.clearCacheContaining('/user');
+
       final progressMap = response['progress'];
       if (progressMap is Map<String, dynamic>) {
         _progress = AttemptProgress.fromJson(progressMap);
@@ -364,6 +368,12 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         if (response['courseEloAfter'] != null) {
           _courseEloAfter = (response['courseEloAfter'] as num).toInt();
         }
+        
+        // Sync the local user model's Elo immediately for the UI
+        if (_courseEloAfter != null) {
+          user?.elo = _courseEloAfter!;
+        }
+
         if (response['targetNextQuestionElo'] != null) {
           _targetNextQuestionElo =
               (response['targetNextQuestionElo'] as num).toInt();
@@ -376,12 +386,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               (response['pointsAwardedPreview'] as num).toDouble();
         }
       });
-
-      if (normalizedType != 'EY') {
-        _showInfo(isCorrect
-            ? 'Benar. Soal berikutnya akan menyesuaikan Elo kamu.'
-            : 'Salah. Soal berikutnya akan menyesuaikan Elo kamu.');
-      }
     } catch (error) {
       _showError('Gagal submit jawaban', error.toString());
     } finally {
