@@ -233,7 +233,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChatbotScreen(
-                    startFresh: false,
+                    startFresh: true,
                     materialId: material!.id,
                     chapterId: widget.status.chapterId,
                     chapterLevel: widget.level,

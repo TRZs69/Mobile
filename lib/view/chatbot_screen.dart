@@ -9,8 +9,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fetch_client/fetch_client.dart';
-import 'package:cupertino_http/cupertino_http.dart';
-import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
@@ -330,10 +328,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     http.Client client;
     if (kIsWeb) {
       client = FetchClient(mode: RequestMode.cors);
-    } else if (Platform.isIOS || Platform.isMacOS) {
-      client = CupertinoClient.defaultSessionConfiguration();
-    } else if (Platform.isAndroid) {
-      client = CronetClient.defaultCronetEngine();
     } else {
       client = http.Client();
     }
@@ -721,10 +715,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     http.Client client;
     if (kIsWeb) {
       client = FetchClient(mode: RequestMode.cors);
-    } else if (Platform.isIOS || Platform.isMacOS) {
-      client = CupertinoClient.defaultSessionConfiguration();
-    } else if (Platform.isAndroid) {
-      client = CronetClient.defaultCronetEngine();
     } else {
       client = http.Client();
     }

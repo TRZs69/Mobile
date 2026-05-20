@@ -151,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
             final contentMaxWidth = availableWidth > 600 ? 520.0 : availableWidth;
             final baseFontSize = (availableWidth * 0.04).clamp(14.0, 18.0).toDouble();
             final titleFontSize = (baseFontSize * 1.5).clamp(20.0, 28.0).toDouble();
-            final headerHeight = isLandscape
+            final headerHeight = (isLandscape && availableHeight < 500)
                 ? 0.0
                 : (availableHeight * 0.34).clamp(180.0, 320.0).toDouble();
             final sidePadding = availableWidth < 360 ? 12.0 : 16.0;
@@ -173,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       SizedBox(height: topGap),
-                      !isLandscape
+                      headerHeight > 0
                           ? SizedBox(
                               height: headerHeight,
                               child: Stack(
