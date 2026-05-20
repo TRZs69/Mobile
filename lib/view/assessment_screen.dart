@@ -137,9 +137,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
       setState(() {
         user = refreshedUser;
-        if (freshUc != null) {
-          _courseEloBefore = freshUc.elo;
-        }
+        // Baseline "Elo Berjalan" with the Global Elo for perfect synchronization.
+        _courseEloBefore = refreshedUser.elo ?? 750;
       });
 
       if (currentAttempt == null) {
