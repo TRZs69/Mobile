@@ -22,12 +22,19 @@ import 'package:app/view/widgets/custom_refresh_scroll.dart';
 class HomeScreen extends StatefulWidget {
   final Function(int) updateIndex;
   final VoidCallback onReplayTutorial;
+  final bool isActive;
 
   const HomeScreen({
     super.key,
     required this.updateIndex,
     required this.onReplayTutorial,
+    this.isActive = false,
   });
+
+  static void clearCaches() {
+    _HomeState._enrolledCache.clear();
+    _HomeState._userCache.clear();
+  }
 
   @override
   State<HomeScreen> createState() => _HomeState();
@@ -154,6 +161,16 @@ class _HomeState extends State<HomeScreen> {
   void initState() {
     super.initState();
     unawaited(_bootstrap());
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      // Refresh user and course data when switching back to Home tab
+      unawaited(getUserFromSharedPreference());
+      unawaited(getEnrolledCourse());
+    }
   }
 
   Future<void> _bootstrap() async {

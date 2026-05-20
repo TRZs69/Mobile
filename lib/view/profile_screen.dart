@@ -96,8 +96,11 @@ class _ProfileState extends State<ProfileScreen> {
       });
     }
 
-    if ((widget.isActive && !oldWidget.isActive) ||
-        (widget.isActive && oldWidget.isMainTutorialActive && !widget.isMainTutorialActive)) {
+    if (widget.isActive && !oldWidget.isActive) {
+      // Refresh data when user switches to Profile tab
+      getUserData();
+      _maybeStartEloSubTutorial();
+    } else if (widget.isActive && oldWidget.isMainTutorialActive && !widget.isMainTutorialActive) {
       _maybeStartEloSubTutorial();
     }
   }

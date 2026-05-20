@@ -338,6 +338,7 @@ class _MainState extends State<Mainscreen> {
     switch (index) {
       case 0:
         return HomeScreen(
+          isActive: navIndex == 0,
           updateIndex: updateIndex,
           onReplayTutorial: _restartTutorialFromHome,
         );
@@ -356,6 +357,7 @@ class _MainState extends State<Mainscreen> {
         );
       default:
         return HomeScreen(
+          isActive: navIndex == 0,
           updateIndex: updateIndex,
           onReplayTutorial: _restartTutorialFromHome,
         );

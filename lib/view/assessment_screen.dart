@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
@@ -10,6 +12,8 @@ import 'package:app/service/chapter_service.dart';
 import 'package:app/service/user_chapter_service.dart';
 import 'package:app/service/user_course_service.dart';
 import 'package:app/service/user_service.dart';
+import 'package:app/service/api_cache_service.dart';
+import 'home_screen.dart';
 import 'package:app/utils/colors.dart';
 
 class AssessmentScreen extends StatefulWidget {
@@ -48,6 +52,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   bool _isLoadingAttempt = false;
   bool _isStartingAttempt = false;
   bool _isSubmittingAnswer = false;
+  bool _isFinishing = false;
+  Map<int, int> _gamificationPoints = {};
   bool _assessmentStarted = false;
   bool _assessmentFinished = false;
   bool _forceNewOnNextStart = false;
@@ -91,6 +97,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     _grade = status.assessmentGrade;
     _pointsEarned = status.assessmentPointsEarned;
     _eloDeltaFinal = status.assessmentEloDelta;
+
+    if (widget.uc != null) {
+      _courseEloBefore = widget.uc!.elo;
+    }
+
     _bootstrapCurrentAttempt();
   }
 
@@ -108,11 +119,30 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     });
 
     try {
+      // Refresh user and user course data for the latest Elo synchronization
+      final refreshedUser = await UserService.getUserById(user!.id);
+      UserCourse? freshUc;
+      if (widget.courseId != null) {
+        try {
+          freshUc = await UserCourseService.getUserCourse(user!.id, widget.courseId!);
+        } catch (_) {}
+      }
+
       final currentAttempt = await ChapterService.getCurrentAssessmentAttempt(
         status.chapterId,
         user!.id,
       );
-      if (!mounted || currentAttempt == null) {
+
+      if (!mounted) return;
+
+      setState(() {
+        user = refreshedUser;
+        if (freshUc != null) {
+          _courseEloBefore = freshUc.elo;
+        }
+      });
+
+      if (currentAttempt == null) {
         return;
       }
       _applyAttempt(currentAttempt, lockMaterial: true);
@@ -150,11 +180,45 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       _assessmentFinished = false;
       _selectedChoice = _currentQuestion?.selectedAnswer ?? '';
       _essayController.text = _currentQuestion?.selectedAnswer ?? '';
-      _courseEloBefore = attempt.courseEloBefore;
-      _courseEloAfter = attempt.courseEloAfter;
-      _targetNextQuestionElo = attempt.targetNextQuestionElo;
-      _eloDeltaQuestion = attempt.eloDeltaQuestion;
-      _pointsAwardedPreview = attempt.pointsAwardedPreview;
+
+      // Prioritize refreshed Elo for fresh attempts, but trust attempt record for ongoing ones
+      if (attempt.courseEloBefore != null) {
+        if (attempt.progress.answeredCount == 0 && _courseEloBefore != null) {
+          // Keep our refreshed _courseEloBefore from bootstrap
+        } else {
+          _courseEloBefore = attempt.courseEloBefore;
+        }
+      }
+
+      if (attempt.courseEloAfter != null) {
+        _courseEloAfter = attempt.courseEloAfter;
+      }
+      if (attempt.targetNextQuestionElo != null) {
+        _targetNextQuestionElo = attempt.targetNextQuestionElo;
+      }
+
+      // Trust backend's question-specific delta if provided
+      if (attempt.eloDeltaQuestion != null) {
+        _eloDeltaQuestion = attempt.eloDeltaQuestion;
+      } else if (_courseEloBefore != null && _courseEloAfter != null && attempt.progress.answeredCount > 0) {
+        // Derive delta from the total change if missing (at least it won't be 0)
+        _eloDeltaQuestion = (_courseEloAfter! - _courseEloBefore!).toDouble();
+      } else {
+        _eloDeltaQuestion = null;
+      }
+
+      if (attempt.pointsAwardedPreview != null) {
+        _pointsAwardedPreview = attempt.pointsAwardedPreview;
+      } else if (mergedQuestions.isNotEmpty) {
+        // Find last answered question and its score for "Poin Soal"
+        final lastAnswered = mergedQuestions.lastWhere(
+          (q) => q.selectedAnswer.isNotEmpty,
+          orElse: () => mergedQuestions.first,
+        );
+        if (lastAnswered.selectedAnswer.isNotEmpty) {
+          _pointsAwardedPreview = lastAnswered.score.toDouble();
+        }
+      }
     });
 
     widget.updateAssessmentStarted(true);
@@ -247,14 +311,27 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
       final completed = response['completed'] == true;
       current.selectedAnswer = answer;
-      _upsertServedQuestion(current);
+
       if (completed) {
+        setState(() {
+          _isFinishing = true;
+          _isSubmittingAnswer = false;
+        });
+        
+        // Ensure the last question's answer is recorded in our local list before finalization
+        _upsertServedQuestion(current);
+        
         final result = response['result'] as Map<String, dynamic>? ?? {};
         await _applyFinalResult(result);
         await _reloadLatestAttemptForResult();
+        
+        setState(() {
+          _isFinishing = false;
+        });
         return;
       }
 
+      _upsertServedQuestion(current);
       final isCorrect = response['isCorrect'] == true;
       current.isCorrect = isCorrect;
       current.score = isCorrect
@@ -320,6 +397,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Future<void> _reloadLatestAttemptForResult() async {
     if (user == null) return;
     try {
+      // Clear cache for the latest attempt endpoint to ensure we get the fresh one
+      await ApiCacheService.clearCacheContaining('assessment/attempt/latest');
+      
       final latestAttempt = await ChapterService.getLatestAssessmentAttempt(
           status.chapterId, user!.id);
       if (!mounted || latestAttempt == null) return;
@@ -377,8 +457,19 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
         widget.uc!.currentChapter = normalizedCurrentChapter;
         widget.uc!.progress = normalizedProgress;
+        
+        // Sync Elo to UserCourse
+        if (_courseEloAfter != null) {
+          widget.uc!.elo = _courseEloAfter!;
+        }
+        
         UserCourseService.updateUserCourse(widget.uc!.id, widget.uc!);
       }
+
+      // Explicitly clear caches to force Home and Profile screens to refresh data.
+      // This solves the issue where Elo/stats don't update immediately.
+      HomeScreen.clearCaches();
+      ApiCacheService.clearCacheContaining('/user');
     });
 
     widget.updateAssessmentFinished(true);
@@ -493,8 +584,34 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoadingAttempt) {
-      return const Center(child: CircularProgressIndicator());
+    if (_isLoadingAttempt || _isFinishing) {
+      return Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('lib/assets/pictures/background-pattern.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: const [
+                CircularProgressIndicator(color: AppColors.primaryColor),
+                SizedBox(height: 10),
+                Text(
+                  "Mohon Tunggu",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'DIN_Next_Rounded',
+                      color: AppColors.primaryColor),
+                ),
+              ],
+            ),
+          ));
     }
 
     if (_assessmentFinished || status.assessmentDone) {
@@ -547,7 +664,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                         backgroundColor: AppColors.primaryColor),
                     onPressed:
                         _isStartingAttempt ? null : _startAssessmentAttempt,
-                    icon: const Icon(LineAwesomeIcons.paper_plane,
+                    icon: const Icon(Icons.send,
                         color: Colors.white),
                     label: const Text('Mulai',
                         style: TextStyle(
@@ -560,6 +677,124 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatsBar() {
+    final currentElo = _courseEloAfter ?? _courseEloBefore;
+    if (currentElo == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryColor.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(color: AppColors.primaryColor.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          _buildStatItem(
+            label: 'Elo Berjalan',
+            value: '$currentElo',
+            icon: Icons.emoji_events,
+            color: AppColors.primaryColor,
+          ),
+          _buildVerticalDivider(),
+          _buildStatItem(
+            label: 'Poin Soal',
+            subLabel: 'Terakhir',
+            value: '+${(_pointsAwardedPreview ?? 0).toInt()}',
+            icon: Icons.monetization_on,
+            color: Colors.orange,
+          ),
+          _buildVerticalDivider(),
+          _buildStatItem(
+            label: 'Delta Soal',
+            subLabel: 'Terakhir',
+            value:
+                '${(_eloDeltaQuestion ?? 0) >= 0 ? '+' : ''}${(_eloDeltaQuestion ?? 0).toStringAsFixed(1)}',
+            icon: (_eloDeltaQuestion ?? 0) >= 0
+                ? Icons.arrow_upward
+                : Icons.arrow_downward,
+            color: (_eloDeltaQuestion ?? 0) >= 0 ? Colors.green : Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String label,
+    String? subLabel,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontFamily: 'DIN_Next_Rounded',
+                        fontSize: 10,
+                        color: Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subLabel != null)
+                      Text(
+                        subLabel,
+                        style: TextStyle(
+                          fontFamily: 'DIN_Next_Rounded',
+                          fontSize: 8,
+                          color: Colors.grey.withOpacity(0.7),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'DIN_Next_Rounded',
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      height: 30,
+      width: 1,
+      color: Colors.grey.withOpacity(0.2),
     );
   }
 
@@ -618,78 +853,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    if (_courseEloBefore != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: AppColors.primaryColor.withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Elo Berjalan',
-                                    style: const TextStyle(
-                                        fontFamily: 'DIN_Next_Rounded',
-                                        fontSize: 12,
-                                        color: Colors.grey)),
-                                Text('${_courseEloAfter ?? _courseEloBefore}',
-                                    style: const TextStyle(
-                                        fontFamily: 'DIN_Next_Rounded',
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.primaryColor)),
-                              ],
-                            ),
-                            if (_pointsAwardedPreview != null && _pointsAwardedPreview! > 0)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text('Poin Diraih',
-                                      style: const TextStyle(
-                                          fontFamily: 'DIN_Next_Rounded',
-                                          fontSize: 12,
-                                          color: Colors.grey)),
-                                  Text(
-                                    '+${_pointsAwardedPreview?.toInt()}',
-                                    style: const TextStyle(
-                                      fontFamily: 'DIN_Next_Rounded',
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orange,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            if (_eloDeltaQuestion != null &&
-                                _eloDeltaQuestion != 0)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text('Delta Soal',
-                                      style: const TextStyle(
-                                          fontFamily: 'DIN_Next_Rounded',
-                                          fontSize: 12,
-                                          color: Colors.grey)),
-                                  Text(
-                                    '${_eloDeltaQuestion! > 0 ? '+' : ''}${_eloDeltaQuestion!.toStringAsFixed(1)}',
-                                    style: TextStyle(
-                                      fontFamily: 'DIN_Next_Rounded',
-                                      fontWeight: FontWeight.bold,
-                                      color: _eloDeltaQuestion! > 0
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
+                    _buildStatsBar(),
                     if (_targetNextQuestionElo != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
@@ -770,82 +934,228 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     );
   }
 
+  void _calculateGamificationPoints() {
+    _gamificationPoints.clear();
+    final questions = _servedQuestions;
+    if (questions.isEmpty) return;
+
+    final nonEssayQuestions =
+        questions.where((q) => q.type.toUpperCase() != 'EY').toList();
+    int totalEarned = _pointsEarned;
+    double totalWeight = 0;
+    List<double> weights = List.filled(questions.length, 0.0);
+
+    int currentUserElo = user?.elo ?? 800;
+    if (currentUserElo < 800) currentUserElo = 800;
+
+    for (int i = 0; i < questions.length; i++) {
+      final current = questions[i];
+      if (current.type.toUpperCase() == 'EY') continue;
+
+      if (current.isCorrect) {
+        int qElo = current.elo;
+        double expectedProb =
+            1 / (1 + math.pow(10, -(currentUserElo - qElo) / 400));
+        double w = 1 - expectedProb;
+        weights[i] = w;
+        totalWeight += w;
+      }
+    }
+
+    int distributedPoints = 0;
+    for (int i = 0; i < questions.length; i++) {
+      if (questions[i].isCorrect && totalWeight > 0) {
+        int pts = ((totalEarned * weights[i]) / totalWeight).round();
+        _gamificationPoints[i] = pts;
+        distributedPoints += pts;
+      } else {
+        _gamificationPoints[i] = 0;
+      }
+    }
+
+    if (totalWeight > 0 && distributedPoints != totalEarned) {
+      int diff = totalEarned - distributedPoints;
+      for (int i = 0; i < questions.length; i++) {
+        if (questions[i].isCorrect) {
+          _gamificationPoints[i] = (_gamificationPoints[i] ?? 0) + diff;
+          break;
+        }
+      }
+    }
+  }
+
+  Widget _buildDetailedQuestions() {
+    return Column(
+      children: _servedQuestions.asMap().entries.map((entry) {
+        final i = entry.key;
+        final q = entry.value;
+        final pts = _gamificationPoints[i] ?? 0;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Soal ${i + 1}: ${q.question}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'DIN_Next_Rounded'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (q.type.toUpperCase() != 'EY')
+                      Icon(
+                        q.isCorrect ? Icons.check_circle : Icons.cancel,
+                        color: q.isCorrect ? Colors.green : Colors.red,
+                        size: 20,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('Jawaban Anda: ${q.selectedAnswer}',
+                    style: TextStyle(
+                        fontFamily: 'DIN_Next_Rounded',
+                        color: q.type.toUpperCase() == 'EY'
+                            ? Colors.black
+                            : (q.isCorrect ? Colors.green : Colors.red))),
+                if (q.type.toUpperCase() != 'EY' && !q.isCorrect)
+                  Text('Jawaban Benar: ${q.correctedAnswer}',
+                      style: const TextStyle(
+                          fontFamily: 'DIN_Next_Rounded', color: Colors.green)),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Elo Soal: ${q.elo}',
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.grey)),
+                    if (pts > 0)
+                      Text('+$pts Poin',
+                          style: const TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildResultView() {
+    _calculateGamificationPoints();
     final objectiveTotal =
         _servedQuestions.where((q) => q.type.toUpperCase() != 'EY').length;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('lib/assets/pictures/background-pattern.png'),
-          fit: BoxFit.cover,
+          image: DecorationImage(
+            image: AssetImage('lib/assets/pictures/background-pattern.png'),
+            fit: BoxFit.cover,
+          ),
         ),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Card(
-              color: AppColors.primaryColor,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Hasil Assessment',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DIN_Next_Rounded')),
-                    const SizedBox(height: 8),
-                    Text('Jumlah Benar: $_correctAnswer / $objectiveTotal',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'DIN_Next_Rounded')),
-                    Text('Skor: $_grade / 100',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'DIN_Next_Rounded')),
-                    const Divider(color: Colors.white54, height: 24),
-                    Text(
-                        'Elo Delta (Perubahan Elo Course): ${_eloDeltaFinal > 0 ? '+' : ''}$_eloDeltaFinal',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DIN_Next_Rounded')),
-                    Text(
-                        'Points Earned (Gamifikasi): ${_pointsEarned > 0 ? '+' : ''}$_pointsEarned',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DIN_Next_Rounded')),
-                  ],
-                ),
-              ),
-            ),
-            if (_newDifficultyLabel != null)
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
               Card(
-                child: ListTile(
-                  leading: const Icon(Icons.trending_up,
-                      color: AppColors.primaryColor),
-                  title: Text(
-                      'Tingkat kesulitan berikutnya: $_newDifficultyLabel',
-                      style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
-                ),
-              ),
-            if (_aiFeedback != null)
-              Card(
+                color: AppColors.primaryColor,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(_aiFeedback!,
-                      style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Hasil Assessment',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'DIN_Next_Rounded')),
+                      const SizedBox(height: 8),
+                      Text('Jumlah Benar: $_correctAnswer / $objectiveTotal',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'DIN_Next_Rounded')),
+                      Text('Skor: $_grade / 100',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'DIN_Next_Rounded')),
+                      const Divider(color: Colors.white54, height: 24),
+                      Text(
+                          'Elo Delta (Perubahan Elo Course): ${_eloDeltaFinal > 0 ? '+' : ''}$_eloDeltaFinal',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'DIN_Next_Rounded')),
+                      Text(
+                          'Points Earned (Gamifikasi): ${_pointsEarned > 0 ? '+' : ''}$_pointsEarned',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'DIN_Next_Rounded')),
+                    ],
+                  ),
                 ),
               ),
-          ],
+              if (_newDifficultyLabel != null)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.trending_up,
+                        color: AppColors.primaryColor),
+                    title: Text(
+                        'Tingkat kesulitan berikutnya: $_newDifficultyLabel',
+                        style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                  ),
+                ),
+              if (_aiFeedback != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(_aiFeedback!,
+                        style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4, bottom: 8),
+                  child: Text(
+                    'Detail Pengerjaan',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryColor,
+                        fontFamily: 'DIN_Next_Rounded'),
+                  ),
+                ),
+              ),
+              _buildDetailedQuestions(),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Tutup',
+                      style: TextStyle(
+                          color: Colors.white, fontFamily: 'DIN_Next_Rounded')),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
