@@ -316,14 +316,17 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           _isFinishing = true;
           _isSubmittingAnswer = false;
         });
-        
+
         // Ensure the last question's answer is recorded in our local list before finalization
         _upsertServedQuestion(current);
-        
+
         final result = response['result'] as Map<String, dynamic>? ?? {};
-        await _applyFinalResult(result);
+        // Reload fresh data from server FIRST to ensure _servedQuestions is correct
         await _reloadLatestAttemptForResult();
         
+        // THEN apply result and show the view
+        await _applyFinalResult(result);
+
         setState(() {
           _isFinishing = false;
         });
@@ -420,6 +423,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       return int.tryParse(v.toString()) ?? fallback;
     }
 
+    final serverObjectiveTarget = safeInt(result['objectiveTarget']);
+    final localObjectiveTotal = _servedQuestions
+        .where((q) => q.servedOrder != null && q.type.toUpperCase() != 'EY')
+        .length;
+
     setState(() {
       _grade = safeInt(result['grade']);
       _pointsEarned = safeInt(result['pointsEarned']);
@@ -429,6 +437,19 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       _correctAnswer = safeInt(result['correctAnswers']);
       _aiFeedback = result['aiFeedback']?.toString();
       _newDifficultyLabel = result['newDifficulty']?.toString();
+      // Use the local count if the server returns 0, but only if we have served questions
+      _progress = AttemptProgress(
+        poolSize: _progress.poolSize,
+        objectiveTarget: serverObjectiveTarget > 0
+            ? serverObjectiveTarget
+            : (localObjectiveTotal > 0 ? localObjectiveTotal : 5),
+        totalTarget: _progress.totalTarget,
+        objectiveAnswered: _progress.objectiveAnswered,
+        objectiveCorrect: _correctAnswer,
+        servedCount: _progress.servedCount,
+        answeredCount: _progress.answeredCount,
+        completed: true,
+      );
       if (result['courseEloStart'] is num) {
         _courseEloBefore = (result['courseEloStart'] as num).toInt();
       }
