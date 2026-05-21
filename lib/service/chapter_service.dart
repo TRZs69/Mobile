@@ -320,12 +320,16 @@ class ChapterService {
   }
 
   static Future<AssessmentAttempt?> getLatestAssessmentAttempt(
-      int chapterId, int userId) async {
+      int chapterId, int userId, {bool forceRefresh = false, int? attemptId}) async {
     try {
-      final response = await ApiCacheService.get(
-        Uri.parse(
-            '${GlobalVar.baseUrl}/assessment/attempt/latest?userId=$userId&chapterId=$chapterId'),
-      );
+      String url = '${GlobalVar.baseUrl}/assessment/attempt/latest?userId=$userId&chapterId=$chapterId';
+      if (attemptId != null) {
+        url += '&attemptId=$attemptId';
+      }
+      final uri = Uri.parse(url);
+      final response = forceRefresh 
+          ? await ApiCacheService.forceRefresh(uri)
+          : await ApiCacheService.get(uri);
 
       if (response.statusCode != 200) {
         final dynamic body = jsonDecode(response.body);
