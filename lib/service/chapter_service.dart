@@ -112,25 +112,29 @@ class ChapterService {
             return;
           }
           final freshResult = jsonDecode(freshResponse.body);
-          final List<dynamic> freshDecodeQuestion = freshResult['questions'] == null
-              ? []
-              : (freshResult['questions'] is String
-                  ? jsonDecode(freshResult['questions'])
-                  : freshResult['questions']);
+          final List<dynamic> freshDecodeQuestion =
+              freshResult['questions'] == null
+                  ? []
+                  : (freshResult['questions'] is String
+                      ? jsonDecode(freshResult['questions'])
+                      : freshResult['questions']);
           final freshQuestions = freshDecodeQuestion
               .map((q) => Question(
                     id: q['id'],
                     question: q['question'] ?? 'No question text',
-                    option: q['options'] != null ? List<String>.from(q['options']) : [],
+                    option: q['options'] != null
+                        ? List<String>.from(q['options'])
+                        : [],
                     correctedAnswer: q['correctedAnswer'] ?? q['answer'] ?? '',
                     type: q['type'] ?? 'PG',
                     elo: q['elo'] ?? 1200,
                   ))
               .toList();
 
-          final List<String>? freshDecodedAnswers = freshResult['answers'] != null
-              ? List<String>.from(jsonDecode(freshResult['answers']))
-              : null;
+          final List<String>? freshDecodedAnswers =
+              freshResult['answers'] != null
+                  ? List<String>.from(jsonDecode(freshResult['answers']))
+                  : null;
 
           onRevalidated(
             Assessment(
@@ -320,14 +324,16 @@ class ChapterService {
   }
 
   static Future<AssessmentAttempt?> getLatestAssessmentAttempt(
-      int chapterId, int userId, {bool forceRefresh = false, int? attemptId}) async {
+      int chapterId, int userId,
+      {bool forceRefresh = false, int? attemptId}) async {
     try {
-      String url = '${GlobalVar.baseUrl}/assessment/attempt/latest?userId=$userId&chapterId=$chapterId';
+      String url =
+          '${GlobalVar.baseUrl}/assessment/attempt/latest?userId=$userId&chapterId=$chapterId';
       if (attemptId != null) {
         url += '&attemptId=$attemptId';
       }
       final uri = Uri.parse(url);
-      final response = forceRefresh 
+      final response = forceRefresh
           ? await ApiCacheService.forceRefresh(uri)
           : await ApiCacheService.get(uri);
 
@@ -421,7 +427,8 @@ class ChapterService {
       String reference, String answer) async {
     Map<String, dynamic> request = {'reference': reference, 'essay': answer};
     try {
-      final response = await ApiCacheService.post(Uri.parse(GlobalVar.similiarityEssayUrl),
+      final response = await ApiCacheService.post(
+          Uri.parse(GlobalVar.similiarityEssayUrl),
           body: request);
       final result = jsonDecode(response.body);
 

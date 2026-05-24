@@ -11,7 +11,7 @@ class Chapter {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  Chapter ({
+  Chapter({
     required this.id,
     required this.name,
     required this.description,
@@ -46,5 +46,4 @@ class Chapter {
   void setProgress(ChapterStatus status) {
     this.status = status;
   }
-
 }

@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiCacheService {
-  static final StreamController<String> errorController = StreamController<String>.broadcast();
+  static final StreamController<String> errorController =
+      StreamController<String>.broadcast();
   static const Duration _timeout = Duration(seconds: 15);
 
   static String cacheKeyFor(Uri url) => 'api_cache_${url.toString()}';
@@ -43,7 +44,7 @@ class ApiCacheService {
     await prefs.remove('name');
     await prefs.remove('role');
     await prefs.remove('sessionId');
-    
+
     errorController.add(message);
   }
 
@@ -53,48 +54,43 @@ class ApiCacheService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = cacheKeyFor(url);
-    return _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey);
+    return _fetchAndCache(url,
+        headers: headers, prefs: prefs, cacheKey: cacheKey);
   }
 
-  static Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+  static Future<http.Response> get(Uri url,
+      {Map<String, String>? headers}) async {
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = cacheKeyFor(url);
 
-    // 1. Try to load from cache
     final cachedData = prefs.getString(cacheKey);
     if (cachedData != null) {
-      // 2. Return cached data immediately for fast UI
-      // But silently fetch in the background to update the cache for next time
       _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey)
           .catchError((_) => http.Response('error', 500));
 
-      return http.Response(
-        cachedData, 
-        200, 
-        headers: {'content-type': 'application/json; charset=utf-8'}
-      );
+      return http.Response(cachedData, 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
     }
 
-    // 3. First time fetching data (cache miss)
-    return await _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey);
+    return await _fetchAndCache(url,
+        headers: headers, prefs: prefs, cacheKey: cacheKey);
   }
 
-  static Future<http.Response> _fetchAndCache(
-      Uri url, 
-      {Map<String, String>? headers, 
-      required SharedPreferences prefs, 
-      required String cacheKey}
-  ) async {
+  static Future<http.Response> _fetchAndCache(Uri url,
+      {Map<String, String>? headers,
+      required SharedPreferences prefs,
+      required String cacheKey}) async {
     try {
       final authHeaders = await _getAuthHeaders();
       final allHeaders = {...authHeaders, ...?headers};
-      final response = await http.get(url, headers: allHeaders).timeout(_timeout);
-      
-      // Handle 401 errors
+      final response =
+          await http.get(url, headers: allHeaders).timeout(_timeout);
+
       if (response.statusCode == 401) {
-        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+        await _handleCriticalError(
+            "Sesi Anda telah berakhir. Silakan login kembali.");
       }
-      
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         await prefs.setString(cacheKey, response.body);
       }
@@ -121,7 +117,8 @@ class ApiCacheService {
       unawaited(
         _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey)
             .then((freshResponse) {
-          if (freshResponse.statusCode >= 200 && freshResponse.statusCode < 300) {
+          if (freshResponse.statusCode >= 200 &&
+              freshResponse.statusCode < 300) {
             onRevalidated(freshResponse);
           }
         }).catchError((_) {}),
@@ -134,20 +131,25 @@ class ApiCacheService {
       );
     }
 
-    return _fetchAndCache(url, headers: headers, prefs: prefs, cacheKey: cacheKey);
+    return _fetchAndCache(url,
+        headers: headers, prefs: prefs, cacheKey: cacheKey);
   }
 
-  static Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body}) async {
+  static Future<http.Response> post(Uri url,
+      {Map<String, String>? headers, Object? body}) async {
     try {
       final authHeaders = await _getAuthHeaders();
       final allHeaders = {...authHeaders, ...?headers};
-      final response = await http.post(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
-      
-      // Handle 401 errors
+      final response = await http
+          .post(url,
+              headers: allHeaders, body: body != null ? jsonEncode(body) : null)
+          .timeout(_timeout);
+
       if (response.statusCode == 401) {
-        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+        await _handleCriticalError(
+            "Sesi Anda telah berakhir. Silakan login kembali.");
       }
-      
+
       return response;
     } on TimeoutException catch (_) {
       rethrow;
@@ -158,16 +160,21 @@ class ApiCacheService {
     }
   }
 
-  static Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body}) async {
+  static Future<http.Response> put(Uri url,
+      {Map<String, String>? headers, Object? body}) async {
     try {
       final authHeaders = await _getAuthHeaders();
       final allHeaders = {...authHeaders, ...?headers};
-      final response = await http.put(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
-      
+      final response = await http
+          .put(url,
+              headers: allHeaders, body: body != null ? jsonEncode(body) : null)
+          .timeout(_timeout);
+
       if (response.statusCode == 401) {
-        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+        await _handleCriticalError(
+            "Sesi Anda telah berakhir. Silakan login kembali.");
       }
-      
+
       return response;
     } on TimeoutException catch (_) {
       rethrow;
@@ -178,16 +185,21 @@ class ApiCacheService {
     }
   }
 
-  static Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body}) async {
+  static Future<http.Response> patch(Uri url,
+      {Map<String, String>? headers, Object? body}) async {
     try {
       final authHeaders = await _getAuthHeaders();
       final allHeaders = {...authHeaders, ...?headers};
-      final response = await http.patch(url, headers: allHeaders, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
-      
+      final response = await http
+          .patch(url,
+              headers: allHeaders, body: body != null ? jsonEncode(body) : null)
+          .timeout(_timeout);
+
       if (response.statusCode == 401) {
-        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+        await _handleCriticalError(
+            "Sesi Anda telah berakhir. Silakan login kembali.");
       }
-      
+
       return response;
     } on TimeoutException catch (_) {
       rethrow;
@@ -198,16 +210,19 @@ class ApiCacheService {
     }
   }
 
-  static Future<http.Response> delete(Uri url, {Map<String, String>? headers}) async {
+  static Future<http.Response> delete(Uri url,
+      {Map<String, String>? headers}) async {
     try {
       final authHeaders = await _getAuthHeaders();
       final allHeaders = {...authHeaders, ...?headers};
-      final response = await http.delete(url, headers: allHeaders).timeout(_timeout);
-      
+      final response =
+          await http.delete(url, headers: allHeaders).timeout(_timeout);
+
       if (response.statusCode == 401) {
-        await _handleCriticalError("Sesi Anda telah berakhir. Silakan login kembali.");
+        await _handleCriticalError(
+            "Sesi Anda telah berakhir. Silakan login kembali.");
       }
-      
+
       return response;
     } on TimeoutException catch (_) {
       rethrow;

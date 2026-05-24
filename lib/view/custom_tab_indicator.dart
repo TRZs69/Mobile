@@ -13,7 +13,8 @@ class CustomTabIndicator extends Decoration {
 
   @override
   BoxPainter createBoxPainter([VoidCallback? onChanged]) {
-    return _CustomPainter(color: color, widthFraction: widthFraction, height: height);
+    return _CustomPainter(
+        color: color, widthFraction: widthFraction, height: height);
   }
 }
 
@@ -22,7 +23,8 @@ class _CustomPainter extends BoxPainter {
   final double widthFraction;
   final double height;
 
-  _CustomPainter({required this.color, required this.widthFraction, required this.height});
+  _CustomPainter(
+      {required this.color, required this.widthFraction, required this.height});
 
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {

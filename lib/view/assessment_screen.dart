@@ -119,12 +119,12 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     });
 
     try {
-      // Refresh user and user course data for the latest Elo synchronization
       final refreshedUser = await UserService.getUserById(user!.id);
       UserCourse? freshUc;
       if (widget.courseId != null) {
         try {
-          freshUc = await UserCourseService.getUserCourse(user!.id, widget.courseId!);
+          freshUc =
+              await UserCourseService.getUserCourse(user!.id, widget.courseId!);
         } catch (_) {}
       }
 
@@ -137,7 +137,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
       setState(() {
         user = refreshedUser;
-        // Baseline "Elo Berjalan" with the Global Elo for perfect synchronization.
+
         _courseEloBefore = refreshedUser.elo ?? 750;
       });
 
@@ -146,7 +146,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       }
       _applyAttempt(currentAttempt, lockMaterial: true);
     } catch (_error) {
-      // Keep initial state when no active attempt.
     } finally {
       if (mounted) {
         setState(() {
@@ -180,10 +179,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       _selectedChoice = _currentQuestion?.selectedAnswer ?? '';
       _essayController.text = _currentQuestion?.selectedAnswer ?? '';
 
-      // Prioritize refreshed Elo for fresh attempts, but trust attempt record for ongoing ones
       if (attempt.courseEloBefore != null) {
         if (attempt.progress.answeredCount == 0 && _courseEloBefore != null) {
-          // Keep our refreshed _courseEloBefore from bootstrap
         } else {
           _courseEloBefore = attempt.courseEloBefore;
         }
@@ -196,11 +193,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         _targetNextQuestionElo = attempt.targetNextQuestionElo;
       }
 
-      // Trust backend's question-specific delta if provided
       if (attempt.eloDeltaQuestion != null) {
         _eloDeltaQuestion = attempt.eloDeltaQuestion;
-      } else if (_courseEloBefore != null && _courseEloAfter != null && attempt.progress.answeredCount > 0) {
-        // Derive delta from the total change if missing (at least it won't be 0)
+      } else if (_courseEloBefore != null &&
+          _courseEloAfter != null &&
+          attempt.progress.answeredCount > 0) {
         _eloDeltaQuestion = (_courseEloAfter! - _courseEloBefore!).toDouble();
       } else {
         _eloDeltaQuestion = null;
@@ -209,7 +206,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       if (attempt.pointsAwardedPreview != null) {
         _pointsAwardedPreview = attempt.pointsAwardedPreview;
       } else if (mergedQuestions.isNotEmpty) {
-        // Find last answered question and its score for "Poin Soal"
         final lastAnswered = mergedQuestions.lastWhere(
           (q) => q.selectedAnswer.isNotEmpty,
           orElse: () => mergedQuestions.first,
@@ -317,14 +313,12 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           _isSubmittingAnswer = false;
         });
 
-        // Ensure the last question's answer is recorded in our local list before finalization
         _upsertServedQuestion(current);
 
         final result = response['result'] as Map<String, dynamic>? ?? {};
-        // Reload fresh data from server FIRST to ensure _servedQuestions is correct
+
         await _reloadLatestAttemptForResult();
-        
-        // THEN apply result and show the view
+
         await _applyFinalResult(result);
 
         setState(() {
@@ -370,8 +364,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         if (response['courseEloAfter'] != null) {
           _courseEloAfter = (response['courseEloAfter'] as num).toInt();
         }
-        
-        // Sync the local user model's Elo immediately for the UI
+
         if (_courseEloAfter != null) {
           user?.elo = _courseEloAfter!;
         }
@@ -402,17 +395,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Future<void> _reloadLatestAttemptForResult() async {
     if (user == null) return;
     try {
-      // Use forceRefresh: true to bypass cache and ensure we get the fresh submitted attempt.
-      // This prevents the UI from falling back to the 23-question bank shown in 1.png.
       final latestAttempt = await ChapterService.getLatestAssessmentAttempt(
-          status.chapterId, user!.id, forceRefresh: true);
+          status.chapterId, user!.id,
+          forceRefresh: true);
       if (!mounted || latestAttempt == null) return;
       setState(() {
         _servedQuestions = latestAttempt.questions.map(_copyQuestion).toList();
       });
-    } catch (_error) {
-      // Best effort only.
-    }
+    } catch (_error) {}
   }
 
   Future<void> _applyFinalResult(Map<String, dynamic> result) async {
@@ -437,7 +427,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       _correctAnswer = safeInt(result['correctAnswers']);
       _aiFeedback = result['aiFeedback']?.toString();
       _newDifficultyLabel = result['newDifficulty']?.toString();
-      // Use the local count if the server returns 0, but only if we have served questions
+
       _progress = AttemptProgress(
         poolSize: _progress.poolSize,
         objectiveTarget: serverObjectiveTarget > 0
@@ -466,7 +456,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       status.assessmentAnswer =
           _servedQuestions.map((q) => q.selectedAnswer).toList();
 
-      if (widget.uc != null && widget.level != null && widget.chLength != null) {
+      if (widget.uc != null &&
+          widget.level != null &&
+          widget.chLength != null) {
         final totalChapter = widget.chLength!;
         if (widget.level == widget.uc!.currentChapter) {
           widget.uc!.currentChapter++;
@@ -474,22 +466,21 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
         final normalizedCurrentChapter =
             widget.uc!.currentChapter.clamp(1, totalChapter + 1);
-        final completedChapter = (normalizedCurrentChapter - 1).clamp(0, totalChapter);
-        final normalizedProgress = ((completedChapter / totalChapter) * 100).toInt();
+        final completedChapter =
+            (normalizedCurrentChapter - 1).clamp(0, totalChapter);
+        final normalizedProgress =
+            ((completedChapter / totalChapter) * 100).toInt();
 
         widget.uc!.currentChapter = normalizedCurrentChapter;
         widget.uc!.progress = normalizedProgress;
-        
-        // Sync Elo to UserCourse
+
         if (_courseEloAfter != null) {
           widget.uc!.elo = _courseEloAfter!;
         }
-        
+
         UserCourseService.updateUserCourse(widget.uc!.id, widget.uc!);
       }
 
-      // Explicitly clear caches to force Home and Profile screens to refresh data.
-      // This solves the issue where Elo/stats don't update immediately.
       HomeScreen.clearCaches();
       ApiCacheService.clearCacheContaining('/user');
     });
@@ -505,9 +496,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Future<void> _persistStatus() async {
     try {
       status = await UserChapterService.updateChapterStatus(status.id, status);
-    } catch (_error) {
-      // Keep local optimistic state.
-    }
+    } catch (_error) {}
   }
 
   Future<void> _refreshUserSnapshot() async {
@@ -520,9 +509,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         user?.elo = refreshed.elo;
         user?.eloTitle = refreshed.eloTitle;
       });
-    } catch (_error) {
-      // Keep local data if refresh fails.
-    }
+    } catch (_error) {}
   }
 
   Question _copyQuestion(Question source) {
@@ -664,8 +651,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                         backgroundColor: AppColors.primaryColor),
                     onPressed:
                         _isStartingAttempt ? null : _startAssessmentAttempt,
-                    icon: const Icon(Icons.send,
-                        color: Colors.white),
+                    icon: const Icon(Icons.send, color: Colors.white),
                     label: const Text('Mulai',
                         style: TextStyle(
                             color: Colors.white,
@@ -1039,8 +1025,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Elo Soal: ${q.elo}',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey)),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey)),
                     if (pts > 0)
                       Text('+$pts Poin',
                           style: const TextStyle(

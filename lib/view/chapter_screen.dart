@@ -213,8 +213,7 @@ class _ChapterScreenState extends State<Chapterscreen>
               Material(
                 color: Colors.white,
                 child: IgnorePointer(
-                  ignoring: _assessmentStarted &&
-                      !_assessmentFinished, // Disable interaction when assessment is active
+                  ignoring: _assessmentStarted && !_assessmentFinished,
                   child: TabBar(
                     controller: _tabController,
                     indicator:
@@ -229,10 +228,10 @@ class _ChapterScreenState extends State<Chapterscreen>
                         TextStyle(fontSize: 14, fontFamily: 'DIN_Next_Rounded'),
                     onTap: (index) {
                       if (_assessmentStarted && !_assessmentFinished) {
-                        return; // Prevent tab switch
+                        return;
                       }
                       setState(() {
-                        _currentIndex = index; // Allow tab switch
+                        _currentIndex = index;
                       });
                     },
                     tabs: [
@@ -244,7 +243,7 @@ class _ChapterScreenState extends State<Chapterscreen>
                 ),
               ),
               Expanded(
-                child: _buildPage(_currentIndex), // Only build the selected tab
+                child: _buildPage(_currentIndex),
               ),
             ],
           ),

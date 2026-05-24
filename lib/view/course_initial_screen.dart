@@ -229,7 +229,6 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
         ),
       ));
     } catch (_) {
-      // Keep previous badges if request fails.
     } finally {
       _isFetchingBadges = false;
     }
@@ -268,7 +267,6 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
         ),
       ));
     } catch (_) {
-      // Keep previous chapters if request fails.
     } finally {
       _isFetchingChapters = false;
     }
@@ -286,7 +284,10 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
       fit: BoxFit.cover,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
-        return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
+        return const Center(
+            child: CircularProgressIndicator(
+          strokeWidth: 2,
+        ));
       },
       errorBuilder: (_, __, ___) {
         return Image.asset('lib/assets/empty.png', width: 50, height: 50);
@@ -303,167 +304,176 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
             ),
           )
         : courseDetail == null
-        ? Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-                'lib/assets/pictures/background-pattern.png'
-            ),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Mulai Course untuk mengaktifkan halaman ini',
-                  style: TextStyle(
-                      fontFamily: 'DIN_Next_Rounded'
+            ? Scaffold(
+                body: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(
+                          'lib/assets/pictures/background-pattern.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
-    )
-        : Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text("Course Overview"),
-        backgroundColor: AppColors.primaryColor,
-        leading: IconButton(
-          onPressed: (){
-            Navigator.pop(context);
-          },
-          icon: Icon(LineAwesomeIcons.angle_left_solid, color: Colors.white,)),
-        titleTextStyle: TextStyle(
-          fontFamily: 'DIN_Next_Rounded',
-          fontSize: 24,
-          color: Colors.white
-        ),
-        iconTheme: IconThemeData(
-          color: Colors.white,
-        ),
-      ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                Image.asset(
-                  'lib/assets/pictures/imk-picture.jpg',
-                  width: double.infinity,
-                  height: 320,
-                  fit: BoxFit.cover,
-                ),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        courseDetail!.courseName,
-                        style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DIN_Next_Rounded',
-                            color: AppColors.primaryColor
-                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Mulai Course untuk mengaktifkan halaman ini',
+                            style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                          )
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Deskripsi',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'DIN_Next_Rounded',
-                          color: AppColors.primaryColor
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        courseDetail!.description ?? '-',
-                        style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Daftar Chapter',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'DIN_Next_Rounded',
-                            color: AppColors.primaryColor
-                        ),
-                      ),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: listChapter.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            color: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(color: Colors.grey, width: 1.0),
-                              borderRadius: BorderRadius.circular(16.0),
-                            ),
-                            child: ListTile(
-                              minTileHeight: 72,
-                              leading: Text('${index + 1}', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold, color: AppColors.primaryColor),),
-                              title: Text(listChapter[index].name, style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-          Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CourseDetailScreen(id: widget.id),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Kerjakan Course',
-                        style: TextStyle(
-                            fontFamily: 'DIN_Next_Rounded',
-                            color: Colors.white
-                        ),
-                      )
+                    ),
                   ),
                 ),
               )
-          )
-        ],
-      ),
-    );
+            : Scaffold(
+                appBar: AppBar(
+                  centerTitle: true,
+                  title: Text("Course Overview"),
+                  backgroundColor: AppColors.primaryColor,
+                  leading: IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(
+                        LineAwesomeIcons.angle_left_solid,
+                        color: Colors.white,
+                      )),
+                  titleTextStyle: TextStyle(
+                      fontFamily: 'DIN_Next_Rounded',
+                      fontSize: 24,
+                      color: Colors.white),
+                  iconTheme: IconThemeData(
+                    color: Colors.white,
+                  ),
+                ),
+                body: Stack(
+                  children: [
+                    SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Image.asset(
+                            'lib/assets/pictures/imk-picture.jpg',
+                            width: double.infinity,
+                            height: 320,
+                            fit: BoxFit.cover,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  courseDetail!.courseName,
+                                  style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'DIN_Next_Rounded',
+                                      color: AppColors.primaryColor),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Deskripsi',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'DIN_Next_Rounded',
+                                      color: AppColors.primaryColor),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  courseDetail!.description ?? '-',
+                                  style:
+                                      TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Daftar Chapter',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'DIN_Next_Rounded',
+                                      color: AppColors.primaryColor),
+                                ),
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: listChapter.length,
+                                  itemBuilder: (context, index) {
+                                    return Card(
+                                      color: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        side: BorderSide(
+                                            color: Colors.grey, width: 1.0),
+                                        borderRadius:
+                                            BorderRadius.circular(16.0),
+                                      ),
+                                      child: ListTile(
+                                        minTileHeight: 72,
+                                        leading: Text(
+                                          '${index + 1}',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                              fontSize: 24,
+                                              fontFamily: 'DIN_Next_Rounded',
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primaryColor),
+                                        ),
+                                        title: Text(listChapter[index].name,
+                                            style: TextStyle(
+                                                fontFamily:
+                                                    'DIN_Next_Rounded')),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 32),
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryColor,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          CourseDetailScreen(id: widget.id),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'Kerjakan Course',
+                                  style: TextStyle(
+                                      fontFamily: 'DIN_Next_Rounded',
+                                      color: Colors.white),
+                                )),
+                          ),
+                        ))
+                  ],
+                ),
+              );
   }
 }

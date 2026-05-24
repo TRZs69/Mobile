@@ -89,7 +89,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   String get _sessionPrefsKey {
     final chapterId = widget.chapterId;
-    return chapterId != null && chapterId > 0 ? '${_sessionPrefsKeyPrefix}_$chapterId' : _sessionPrefsKeyPrefix;
+    return chapterId != null && chapterId > 0
+        ? '${_sessionPrefsKeyPrefix}_$chapterId'
+        : _sessionPrefsKeyPrefix;
   }
 
   @override
@@ -121,16 +123,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() => _userId = storedUserId);
 
     if (widget.startFresh) {
-      setState(() { _sessionId = null; _messages.clear(); _history.clear(); });
+      setState(() {
+        _sessionId = null;
+        _messages.clear();
+        _history.clear();
+      });
       return;
     }
 
     final storedSessionId = prefs.getString(_sessionPrefsKey);
     if (!mounted) return;
     setState(() {
-      _sessionId = (storedSessionId != null && storedSessionId.isNotEmpty) ? storedSessionId : null;
+      _sessionId = (storedSessionId != null && storedSessionId.isNotEmpty)
+          ? storedSessionId
+          : null;
     });
- 
+
     if (widget.inheritSession) return;
     if (storedSessionId != null && storedSessionId.isNotEmpty) {
       await _fetchHistory(storedSessionId);
@@ -143,9 +151,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (!mounted) return;
     setState(() => _isLoadingHistory = true);
     try {
-      final response = await http.get(Uri.parse('${GlobalVar.baseUrl}/chat/history/$sessionId'));
+      final response = await http
+          .get(Uri.parse('${GlobalVar.baseUrl}/chat/history/$sessionId'));
       if (response.statusCode != 200) {
-        if (response.statusCode == 400 || response.statusCode == 404) await _clearPersistedSession();
+        if (response.statusCode == 400 || response.statusCode == 404)
+          await _clearPersistedSession();
         return;
       }
       String bodyStr = response.body.trim();
@@ -157,7 +167,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       } catch (e) {
         debugPrint('Error decoding history JSON: $e');
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
   }
@@ -168,12 +179,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     try {
       final response = await http.get(
         Uri.parse('${GlobalVar.baseUrl}/chat/history/user/$userId').replace(
-          queryParameters: { if (widget.chapterId != null && widget.chapterId! > 0) 'chapterId': widget.chapterId.toString() },
+          queryParameters: {
+            if (widget.chapterId != null && widget.chapterId! > 0)
+              'chapterId': widget.chapterId.toString()
+          },
         ),
       );
       if (response.statusCode != 200) return;
       String bodyStr = response.body.trim();
-      // Strip UTF-8 BOM if present
+
       if (bodyStr.startsWith('\uFEFF')) bodyStr = bodyStr.substring(1);
       if (bodyStr.isEmpty) return;
       try {
@@ -182,35 +196,51 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       } catch (e) {
         debugPrint('Error decoding user history JSON: $e | body: $bodyStr');
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
   }
 
-  Future<void> _applyHistoryResponse(Map<String, dynamic> body, {String? fallbackSessionId}) async {
+  Future<void> _applyHistoryResponse(Map<String, dynamic> body,
+      {String? fallbackSessionId}) async {
     final rawSession = body['sessionId'];
-    final sessionCandidate = rawSession != null ? rawSession.toString().trim() : (fallbackSessionId ?? '').trim();
+    final sessionCandidate = rawSession != null
+        ? rawSession.toString().trim()
+        : (fallbackSessionId ?? '').trim();
     final payload = body['messages'] as List<dynamic>? ?? [];
-    
-    final loadedMessages = payload.map((raw) {
-      final map = (raw as Map<String, dynamic>? ?? {});
-      final content = (map['content'] ?? '').toString().trim();
-      final id = map['id']?.toString();
-      if (content.isEmpty) return null;
-      return ChatMessage(id: id, content: content, isUser: (map['role'] ?? 'user') == 'user');
-    }).whereType<ChatMessage>().toList();
+
+    final loadedMessages = payload
+        .map((raw) {
+          final map = (raw as Map<String, dynamic>? ?? {});
+          final content = (map['content'] ?? '').toString().trim();
+          final id = map['id']?.toString();
+          if (content.isEmpty) return null;
+          return ChatMessage(
+              id: id,
+              content: content,
+              isUser: (map['role'] ?? 'user') == 'user');
+        })
+        .whereType<ChatMessage>()
+        .toList();
 
     if (!mounted) return;
     setState(() {
-      _messages..clear()..addAll(loadedMessages);
+      _messages
+        ..clear()
+        ..addAll(loadedMessages);
       _syncHistoryFromMessages(_messages);
     });
     await _persistSessionId(sessionCandidate);
   }
 
-  Future<void> _persistSessionId(String? value, {bool skipFetch = false}) async {
+  Future<void> _persistSessionId(String? value,
+      {bool skipFetch = false}) async {
     final next = value?.trim();
-    if (next == null || next.isEmpty || next.toLowerCase() == 'null' || next == _sessionId) return;
+    if (next == null ||
+        next.isEmpty ||
+        next.toLowerCase() == 'null' ||
+        next == _sessionId) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_sessionPrefsKey, next);
     if (!mounted) return;
@@ -227,7 +257,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionPrefsKey);
     if (!mounted) return;
-    setState(() { _sessionId = null; _history.clear(); });
+    setState(() {
+      _sessionId = null;
+      _history.clear();
+    });
   }
 
   void _addToHistory({required bool isUser, required String content}) {
@@ -238,24 +271,32 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   void _syncHistoryFromMessages(List<ChatMessage> messages) {
-    _history..clear()..addAll(messages.map((m) => {'role': m.isUser ? 'user' : 'assistant', 'content': m.content}));
+    _history
+      ..clear()
+      ..addAll(messages.map((m) =>
+          {'role': m.isUser ? 'user' : 'assistant', 'content': m.content}));
     if (_history.length > 20) _history.removeRange(0, _history.length - 20);
   }
 
   void _startPlaceholderCycling(int index) {
     _placeholderTimer?.cancel();
     _placeholderTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (!mounted || !_isSending || _streamHasProducedContent || _activeStreamIndex != index) {
+      if (!mounted ||
+          !_isSending ||
+          _streamHasProducedContent ||
+          _activeStreamIndex != index) {
         timer.cancel();
         return;
       }
-      // Pick a different one each time
+
       final currentText = _messages[index].content;
-      String nextText = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+      String nextText =
+          _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
       while (nextText == currentText) {
-        nextText = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+        nextText = _thinkingPlaceholders[
+            _random.nextInt(_thinkingPlaceholders.length)];
       }
-      
+
       _currentPlaceholder = nextText;
       _messages[index].content = nextText;
     });
@@ -266,7 +307,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (text.isEmpty || _isSending) return;
 
     late final int assistantIndex;
-    final placeholder = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+    final placeholder =
+        _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
 
     setState(() {
       _messages.add(ChatMessage(content: text, isUser: true));
@@ -283,11 +325,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _startPlaceholderCycling(assistantIndex);
 
     try {
-      final reply = await _streamAssistantReply(prompt: text, assistantIndex: assistantIndex);
+      final reply = await _streamAssistantReply(
+          prompt: text, assistantIndex: assistantIndex);
       if (!mounted) return;
 
-      final finalReply = reply.trim().isEmpty ? _fallbackAssistantReply : reply.trim();
-      
+      final finalReply =
+          reply.trim().isEmpty ? _fallbackAssistantReply : reply.trim();
+
       setState(() {
         _activeStreamIndex = null;
         _streamHasProducedContent = false;
@@ -297,12 +341,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _fetchSessions();
     } catch (error) {
       if (!mounted) return;
-      String errMsg = error is _PartialStreamResult ? (error.partial.isEmpty ? _fallbackAssistantReply : error.partial) : 'Error: $error';
-      
+      String errMsg = error is _PartialStreamResult
+          ? (error.partial.isEmpty ? _fallbackAssistantReply : error.partial)
+          : 'Error: $error';
+
       if (assistantIndex >= 0 && assistantIndex < _messages.length) {
         _messages[assistantIndex].content = errMsg;
       }
-      
+
       setState(() {
         _isSending = false;
         _activeStreamIndex = null;
@@ -312,7 +358,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     }
   }
 
-  Future<String> _streamAssistantReply({required String prompt, required int assistantIndex}) async {
+  Future<String> _streamAssistantReply(
+      {required String prompt, required int assistantIndex}) async {
     final body = {
       'message': prompt,
       'history': _history,
@@ -324,14 +371,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     String replyBuffer = '';
     final streamUri = Uri.parse('${GlobalVar.baseUrl}/chat/stream');
-    
+
     http.Client client;
     if (kIsWeb) {
       client = FetchClient(mode: RequestMode.cors);
     } else {
       client = http.Client();
     }
-    
+
     try {
       final request = http.Request('POST', streamUri)
         ..headers['Content-Type'] = 'application/json'
@@ -339,7 +386,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ..body = jsonEncode(body);
 
       final response = await client.send(request);
-      if (response.statusCode != 200) throw Exception('Server error: ${response.statusCode}');
+      if (response.statusCode != 200)
+        throw Exception('Server error: ${response.statusCode}');
 
       final rawStream = response.stream.transform(utf8.decoder);
       String sseBuffer = '';
@@ -353,7 +401,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
           if (line.startsWith('data:')) {
             String dataStr = line.substring(5).trim();
-            if (dataStr.startsWith('\uFEFF')) dataStr = dataStr.substring(1).trim();
+            if (dataStr.startsWith('\uFEFF'))
+              dataStr = dataStr.substring(1).trim();
             if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
 
@@ -369,7 +418,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               final payload = jsonDecode(dataStr) as Map<String, dynamic>;
               if (payload['error'] != null) throw Exception(payload['error']);
               final sessionValue = payload['sessionId']?.toString();
-              if (sessionValue != null && sessionValue.isNotEmpty) _persistSessionId(sessionValue, skipFetch: true);
+              if (sessionValue != null && sessionValue.isNotEmpty)
+                _persistSessionId(sessionValue, skipFetch: true);
 
               final delta = payload['delta']?.toString();
               if (delta != null && delta.isNotEmpty) {
@@ -384,7 +434,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 _updateAssistantMessage(assistantIndex, replyBuffer);
               }
 
-              if (payload['userMessageId'] != null || payload['assistantMessageId'] != null) {
+              if (payload['userMessageId'] != null ||
+                  payload['assistantMessageId'] != null) {
                 _persistMessageIds(
                   userIndex: assistantIndex - 1,
                   assistantIndex: assistantIndex,
@@ -393,8 +444,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 );
               }
 
-              if (payload['titleDelta'] != null) _updateSessionTitleStream(payload['titleDelta']);
-              if (payload['title'] != null) _updateSessionTitleFinal(payload['title']);
+              if (payload['titleDelta'] != null)
+                _updateSessionTitleStream(payload['titleDelta']);
+              if (payload['title'] != null)
+                _updateSessionTitleFinal(payload['title']);
             } catch (e) {
               debugPrint('Error parsing stream SSE data: $e | data: $dataStr');
             }
@@ -402,25 +455,39 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         }
       }
       return replyBuffer;
-    } finally { client.close(); }
+    } finally {
+      client.close();
+    }
   }
 
-  void _persistMessageIds({required int userIndex, required int assistantIndex, String? userId, String? assistantId}) {
+  void _persistMessageIds(
+      {required int userIndex,
+      required int assistantIndex,
+      String? userId,
+      String? assistantId}) {
     if (!mounted) return;
     setState(() {
       if (userIndex >= 0 && userIndex < _messages.length && userId != null) {
-        _messages[userIndex] = ChatMessage(id: userId, content: _messages[userIndex].content, isUser: true);
+        _messages[userIndex] = ChatMessage(
+            id: userId, content: _messages[userIndex].content, isUser: true);
       }
-      if (assistantIndex >= 0 && assistantIndex < _messages.length && assistantId != null) {
-        _messages[assistantIndex] = ChatMessage(id: assistantId, content: _messages[assistantIndex].content, isUser: false);
+      if (assistantIndex >= 0 &&
+          assistantIndex < _messages.length &&
+          assistantId != null) {
+        _messages[assistantIndex] = ChatMessage(
+            id: assistantId,
+            content: _messages[assistantIndex].content,
+            isUser: false);
       }
     });
   }
 
   void _updateAssistantMessage(int index, String content) {
     if (!mounted || index < 0 || index >= _messages.length) return;
-    
-    if (_activeStreamIndex == index && content.isNotEmpty && !_thinkingPlaceholders.contains(content)) {
+
+    if (_activeStreamIndex == index &&
+        content.isNotEmpty &&
+        !_thinkingPlaceholders.contains(content)) {
       if (!_streamHasProducedContent) {
         setState(() {
           _streamHasProducedContent = true;
@@ -436,7 +503,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() {
       final i = _sessions.indexWhere((s) => s.id == _sessionId);
       if (i != -1 && i < _sessions.length) {
-        _sessions[i] = _sessions[i].copyWith(title: (_sessions[i].title ?? '') + delta);
+        _sessions[i] =
+            _sessions[i].copyWith(title: (_sessions[i].title ?? '') + delta);
       }
     });
   }
@@ -454,9 +522,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Future<void> _fetchSessions() async {
     if (_userId == null) return;
     setState(() => _isLoadingSessions = true);
-    final sessions = await ChatSessionApi.fetchSessions(_userId!, chapterId: widget.chapterId);
+    final sessions = await ChatSessionApi.fetchSessions(_userId!,
+        chapterId: widget.chapterId);
     if (!mounted) return;
-    setState(() { _sessions = sessions; _isLoadingSessions = false; });
+    setState(() {
+      _sessions = sessions;
+      _isLoadingSessions = false;
+    });
   }
 
   @override
@@ -471,7 +543,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.chapterLevel != null ? 'Levely - Chapter ${widget.chapterLevel}' : 'Levely',
+          widget.chapterLevel != null
+              ? 'Levely - Chapter ${widget.chapterLevel}'
+              : 'Levely',
           style: const TextStyle(color: AppColors.appBarIconColor),
         ),
         centerTitle: true,
@@ -481,25 +555,37 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           if (_isLoadingHistory) const LinearProgressIndicator(minHeight: 2),
           Expanded(
             child: _messages.isEmpty
-              ? (_isLoadingHistory ? const Center(child: CircularProgressIndicator()) : _buildEmptyState())
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    if (index >= _messages.length) return const SizedBox.shrink();
-                    final msg = _messages[index];
-                    return ChatBubble(
-                      message: msg,
-                      isStreaming: index == _activeStreamIndex,
-                      showIndicator: index == _activeStreamIndex && !_streamHasProducedContent,
-                      onLongPress: (msg.isUser && msg.id != null && !_isSending) ? () => _showUserMessageOptions(index) : null,
-                      onRetry: (!msg.isUser && index > 0 && _messages[index - 1].isUser && _messages[index - 1].id != null && !_isSending)
-                          ? () => _confirmRetry(index - 1, _messages[index - 1].content)
-                          : null,
-                      thinkingPlaceholders: _thinkingPlaceholders,
-                    );
-                  },
-                ),
+                ? (_isLoadingHistory
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildEmptyState())
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      if (index >= _messages.length)
+                        return const SizedBox.shrink();
+                      final msg = _messages[index];
+                      return ChatBubble(
+                        message: msg,
+                        isStreaming: index == _activeStreamIndex,
+                        showIndicator: index == _activeStreamIndex &&
+                            !_streamHasProducedContent,
+                        onLongPress:
+                            (msg.isUser && msg.id != null && !_isSending)
+                                ? () => _showUserMessageOptions(index)
+                                : null,
+                        onRetry: (!msg.isUser &&
+                                index > 0 &&
+                                _messages[index - 1].isUser &&
+                                _messages[index - 1].id != null &&
+                                !_isSending)
+                            ? () => _confirmRetry(
+                                index - 1, _messages[index - 1].content)
+                            : null,
+                        thinkingPlaceholders: _thinkingPlaceholders,
+                      );
+                    },
+                  ),
           ),
           _buildInputArea(),
         ],
@@ -619,7 +705,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             autofocus: true,
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal')),
             TextButton(
               onPressed: () {
                 final newText = editController.text.trim();
@@ -644,7 +732,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (msg.id == null) return;
 
     late final int assistantIndex;
-    final placeholder = _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
+    final placeholder =
+        _thinkingPlaceholders[_random.nextInt(_thinkingPlaceholders.length)];
 
     setState(() {
       _isSending = true;
@@ -670,7 +759,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         assistantIndex: assistantIndex,
         userIndex: index,
       );
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -711,14 +800,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     String replyBuffer = '';
     final streamUri = ChatSessionApi.getEditStreamUri();
-    
+
     http.Client client;
     if (kIsWeb) {
       client = FetchClient(mode: RequestMode.cors);
     } else {
       client = http.Client();
     }
-    
+
     try {
       final request = http.Request('POST', streamUri)
         ..headers['Content-Type'] = 'application/json'
@@ -726,7 +815,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ..body = jsonEncode(body);
 
       final response = await client.send(request);
-      if (response.statusCode != 200) throw Exception('Server error: ${response.statusCode}');
+      if (response.statusCode != 200)
+        throw Exception('Server error: ${response.statusCode}');
 
       final rawStream = response.stream.transform(utf8.decoder);
       String sseBuffer = '';
@@ -740,7 +830,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
           if (line.startsWith('data:')) {
             String dataStr = line.substring(5).trim();
-            if (dataStr.startsWith('\uFEFF')) dataStr = dataStr.substring(1).trim();
+            if (dataStr.startsWith('\uFEFF'))
+              dataStr = dataStr.substring(1).trim();
             if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
 
@@ -767,7 +858,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 _updateAssistantMessage(assistantIndex, replyBuffer);
               }
 
-              if (payload['userMessageId'] != null || payload['assistantMessageId'] != null) {
+              if (payload['userMessageId'] != null ||
+                  payload['assistantMessageId'] != null) {
                 _persistMessageIds(
                   userIndex: userIndex,
                   assistantIndex: assistantIndex,
@@ -776,18 +868,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 );
               }
             } catch (e) {
-              debugPrint('Error parsing SSE data in edit stream: $e | data: $dataStr');
+              debugPrint(
+                  'Error parsing SSE data in edit stream: $e | data: $dataStr');
             }
           }
         }
       }
       return replyBuffer;
-    } finally { client.close(); }
+    } finally {
+      client.close();
+    }
   }
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _onSelectSession(ChatSession session) async {
@@ -816,7 +912,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Hapus Chat', style: TextStyle(color: Colors.red)),
+                title: const Text('Hapus Chat',
+                    style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
                   _confirmDeleteSession(session);
@@ -842,13 +939,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             autofocus: true,
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal')),
             TextButton(
               onPressed: () async {
                 final newTitle = titleController.text.trim();
                 if (newTitle.isNotEmpty) {
                   Navigator.pop(context);
-                  final success = await ChatSessionApi.renameSession(session.id, newTitle);
+                  final success =
+                      await ChatSessionApi.renameSession(session.id, newTitle);
                   if (success) {
                     _fetchSessions();
                     _showSnack('Berhasil mengubah nama sesi');
@@ -874,7 +974,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           title: const Text('Hapus Chat?'),
           content: const Text('Riwayat chat ini akan dihapus permanen.'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal')),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () async {
@@ -882,7 +984,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 final success = await ChatSessionApi.deleteSession(session.id);
                 if (success) {
                   if (session.id == _sessionId) {
-                    setState(() { _sessionId = null; _messages.clear(); _history.clear(); });
+                    setState(() {
+                      _sessionId = null;
+                      _messages.clear();
+                      _history.clear();
+                    });
                   }
                   _fetchSessions();
                   _showSnack('Sesi chat dihapus');
@@ -899,29 +1005,35 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildInputArea() => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              enabled: !_isLoadingHistory,
-              onSubmitted: (_) => _sendMessage(),
-              decoration: const InputDecoration(hintText: 'Tanya apa saja...', border: OutlineInputBorder()),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  enabled: !_isLoadingHistory,
+                  onSubmitted: (_) => _sendMessage(),
+                  decoration: const InputDecoration(
+                      hintText: 'Tanya apa saja...',
+                      border: OutlineInputBorder()),
+                ),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed:
+                    (_isSending || _isLoadingHistory) ? null : _sendMessage,
+                icon: _isSending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.send, color: AppColors.primaryColor),
+              )
+            ],
           ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: (_isSending || _isLoadingHistory) ? null : _sendMessage,
-            icon: _isSending 
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.send, color: AppColors.primaryColor),
-          )
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
   Widget _buildDrawer() {
     final filteredSessions = _sessions.where((session) {
@@ -933,7 +1045,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 8),
+            padding: EdgeInsets.fromLTRB(
+                16, MediaQuery.of(context).padding.top + 16, 16, 8),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -971,7 +1084,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             title: const Text('Chat Baru'),
             enabled: !_isSending && !_isLoadingHistory,
             onTap: () {
-              setState(() { _sessionId = null; _messages.clear(); _history.clear(); });
+              setState(() {
+                _sessionId = null;
+                _messages.clear();
+                _history.clear();
+              });
               Navigator.pop(context);
             },
           ),
@@ -982,12 +1099,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               padding: EdgeInsets.zero,
               itemCount: filteredSessions.length,
               itemBuilder: (context, i) {
-                if (i >= filteredSessions.length) return const SizedBox.shrink();
+                if (i >= filteredSessions.length)
+                  return const SizedBox.shrink();
                 final session = filteredSessions[i];
                 return ListTile(
                   title: Text(session.title ?? 'Chat Baru'),
                   selected: session.id == _sessionId,
-                  onTap: () { Navigator.pop(context); _onSelectSession(session); },
+                  onTap: () {
+                    Navigator.pop(context);
+                    _onSelectSession(session);
+                  },
                   onLongPress: () => _showSessionOptions(session),
                 );
               },
@@ -999,17 +1120,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Widget _buildEmptyState() => Container(
-    decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('lib/assets/pictures/background-pattern.png'), fit: BoxFit.cover)),
-    child: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center, 
-        children: [
+        decoration: const BoxDecoration(
+            image: DecorationImage(
+                image: AssetImage('lib/assets/pictures/background-pattern.png'),
+                fit: BoxFit.cover)),
+        child: Center(
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           SvgPicture.asset(
             'lib/assets/vectors/levely_empty_chat.svg',
             width: 100,
             height: 100,
-          ), 
-          const SizedBox(height: 16), 
+          ),
+          const SizedBox(height: 16),
           const Text(
             'Mulai ngobrol dengan Levely!',
             style: TextStyle(
@@ -1018,10 +1141,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               color: Colors.black54,
             ),
           )
-        ]
-      )
-    ),
-  );
+        ])),
+      );
 }
 
 class _PartialStreamResult implements Exception {

@@ -5,17 +5,17 @@ import 'api_cache_service.dart';
 import '../global_var.dart';
 
 class UserChapterService {
-
-  static Future<ChapterStatus> getChapterStatus(int idUser, int idChapter) async {
+  static Future<ChapterStatus> getChapterStatus(
+      int idUser, int idChapter) async {
     try {
-      final response = await ApiCacheService.get(Uri.parse('${GlobalVar.baseUrl}/userchapter/$idUser/$idChapter'));
-      
-      if(response.statusCode == 200) {
+      final response = await ApiCacheService.get(
+          Uri.parse('${GlobalVar.baseUrl}/userchapter/$idUser/$idChapter'));
+
+      if (response.statusCode == 200) {
         final body = response.body;
         final result = jsonDecode(body);
         return ChapterStatus.fromJson(result['data']);
       } else {
-        // Return a default status if none exists for this user/chapter yet
         return ChapterStatus(
           id: 0,
           userId: idUser,
@@ -37,23 +37,22 @@ class UserChapterService {
           updatedAt: DateTime.now(),
         );
       }
-    } catch(e){
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
 
-  static Future<void> createUserChapter(int userId, int chapterId) async{
+  static Future<void> createUserChapter(int userId, int chapterId) async {
     try {
-      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userchapter'), body: {
-        'userId': userId,
-        'chapterId': chapterId
-      });
-    } catch(e){
+      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userchapter'),
+          body: {'userId': userId, 'chapterId': chapterId});
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
 
-  static Future<ChapterStatus> updateChapterStatus(int id, ChapterStatus status) async {
+  static Future<ChapterStatus> updateChapterStatus(
+      int id, ChapterStatus status) async {
     try {
       final responsePut = await ApiCacheService.put(
         Uri.parse('${GlobalVar.baseUrl}/userchapter/$id'),
@@ -67,7 +66,7 @@ class UserChapterService {
       }
 
       return status;
-    } catch(e){
+    } catch (e) {
       throw Exception(e.toString());
     }
   }

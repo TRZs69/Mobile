@@ -6,14 +6,13 @@ class Assignment {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  Assignment ({
-    required this.id,
-    required this.chapterId,
-    required this.instruction,
-    this.fileUrl,
-    required this.updatedAt,
-    required this.createdAt
-  });
+  Assignment(
+      {required this.id,
+      required this.chapterId,
+      required this.instruction,
+      this.fileUrl,
+      required this.updatedAt,
+      required this.createdAt});
 
   factory Assignment.fromJson(Map<String, dynamic> json) {
     return Assignment(

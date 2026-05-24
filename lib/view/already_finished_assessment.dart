@@ -23,10 +23,12 @@ class AlreadyFinishedAssessmentAssessmentScreen extends StatefulWidget {
   });
 
   @override
-  State<AlreadyFinishedAssessmentAssessmentScreen> createState() => _AlreadyFinishedAssessmentAssessmentScreenState();
+  State<AlreadyFinishedAssessmentAssessmentScreen> createState() =>
+      _AlreadyFinishedAssessmentAssessmentScreenState();
 }
 
-class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinishedAssessmentAssessmentScreen> {
+class _AlreadyFinishedAssessmentAssessmentScreenState
+    extends State<AlreadyFinishedAssessmentAssessmentScreen> {
   bool tapped = false;
   bool assessmentDone = false;
   bool allQuestionsAnswered = false;
@@ -50,7 +52,8 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
 
   void getAssessment(int id) async {
     try {
-      final latestAttempt = await ChapterService.getLatestAssessmentAttempt(id, widget.user.id);
+      final latestAttempt =
+          await ChapterService.getLatestAssessmentAttempt(id, widget.user.id);
       if (latestAttempt != null) {
         setState(() {
           question = latestAttempt.toAssessment();
@@ -58,9 +61,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
         });
         return;
       }
-    } catch (_error) {
-      // fallback to legacy endpoint below
-    }
+    } catch (_error) {}
 
     final resultAssessment = await ChapterService.getAssessmentByChapterId(id);
     setState(() {
@@ -86,7 +87,9 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
       } else if (i.type == 'EY') {
         int fullscore = rangeScore.ceil();
         try {
-          double similarity = double.parse((await checkEssay(i.correctedAnswer, i.selectedAnswer)).toStringAsFixed(1));
+          double similarity = double.parse(
+              (await checkEssay(i.correctedAnswer, i.selectedAnswer))
+                  .toStringAsFixed(1));
           if (similarity > 0) {
             question!.questions[index].score = rangeScore.ceil();
             score += (fullscore * similarity).ceil();
@@ -108,9 +111,9 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
     return score;
   }
 
-
-  Future<double> checkEssay(String reference, String answer) async{
-    double similiarity = await ChapterService.checkSimiliarity(reference, answer);
+  Future<double> checkEssay(String reference, String answer) async {
+    double similiarity =
+        await ChapterService.checkSimiliarity(reference, answer);
     return similiarity;
   }
 
@@ -147,8 +150,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   Future<bool> _calculateResults() async {
     tapped = true;
     correctAnswer = 0;
-    
-    // Filter to only include questions that were actually served to the user
+
     final questions = (question?.questions ?? [])
         .where((q) => q.servedOrder != null)
         .toList()
@@ -158,12 +160,14 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
       point = status.assessmentGrade;
       return true;
     }
-    
+
     final nonEssayQuestions = questions.where((q) => q.type != 'EY').toList();
-    final totalAssessable = nonEssayQuestions.isEmpty ? 1 : nonEssayQuestions.length;
+    final totalAssessable =
+        nonEssayQuestions.isEmpty ? 1 : nonEssayQuestions.length;
     final rangeScore = (100 / totalAssessable).ceil();
 
-    final hasPreloadedAnswers = questions.any((q) => q.selectedAnswer.trim().isNotEmpty);
+    final hasPreloadedAnswers =
+        questions.any((q) => q.selectedAnswer.trim().isNotEmpty);
     if (!hasPreloadedAnswers && status.assessmentAnswer.isNotEmpty) {
       final total = status.assessmentAnswer.length < questions.length
           ? status.assessmentAnswer.length
@@ -176,7 +180,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
     int totalEarned = status.assessmentPointsEarned;
     double totalWeight = 0;
     List<double> weights = List.filled(questions.length, 0.0);
-    
+
     int currentUserElo = widget.user.elo ?? 800;
     if (currentUserElo < 800) currentUserElo = 800;
 
@@ -191,7 +195,8 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
       final normalizedSelected = current.selectedAnswer.trim().toLowerCase();
       final normalizedCorrect = current.correctedAnswer.trim().toLowerCase();
       final isCorrect = current.isCorrect ||
-          (normalizedSelected.isNotEmpty && normalizedSelected == normalizedCorrect);
+          (normalizedSelected.isNotEmpty &&
+              normalizedSelected == normalizedCorrect);
 
       current.isCorrect = isCorrect;
       if (isCorrect) {
@@ -199,9 +204,10 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
           current.score = rangeScore;
         }
         correctAnswer++;
-        
+
         int qElo = current.elo ?? 800;
-        double expectedProb = 1 / (1 + math.pow(10, -(currentUserElo - qElo) / 400));
+        double expectedProb =
+            1 / (1 + math.pow(10, -(currentUserElo - qElo) / 400));
         double w = 1 - expectedProb;
         weights[i] = w;
         totalWeight += w;
@@ -209,27 +215,27 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
         current.score = 0;
       }
     }
-    
+
     int distributedPoints = 0;
     _gamificationPoints.clear();
     for (int i = 0; i < questions.length; i++) {
-        if (questions[i].isCorrect && totalWeight > 0) {
-            int pts = ((totalEarned * weights[i]) / totalWeight).round();
-            _gamificationPoints[i] = pts;
-            distributedPoints += pts;
-        } else {
-            _gamificationPoints[i] = 0;
-        }
+      if (questions[i].isCorrect && totalWeight > 0) {
+        int pts = ((totalEarned * weights[i]) / totalWeight).round();
+        _gamificationPoints[i] = pts;
+        distributedPoints += pts;
+      } else {
+        _gamificationPoints[i] = 0;
+      }
     }
-    
+
     if (totalWeight > 0 && distributedPoints != totalEarned) {
-        int diff = totalEarned - distributedPoints;
-        for (int i = 0; i < questions.length; i++) {
-            if (questions[i].isCorrect) {
-                _gamificationPoints[i] = (_gamificationPoints[i] ?? 0) + diff;
-                break;
-            }
+      int diff = totalEarned - distributedPoints;
+      for (int i = 0; i < questions.length; i++) {
+        if (questions[i].isCorrect) {
+          _gamificationPoints[i] = (_gamificationPoints[i] ?? 0) + diff;
+          break;
         }
+      }
     }
 
     point = nonEssayQuestions.fold<int>(0, (sum, q) => sum + q.score);
@@ -253,117 +259,153 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
               SizedBox(height: 10),
               Text(
                 "Mohon Tunggu",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded'),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'DIN_Next_Rounded'),
               ),
             ],
           ),
-        )
-    );
+        ));
   }
 
   Widget _buildQuizResult() {
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: AssetImage(
-              'lib/assets/pictures/background-pattern.png'
-          ),
+          image: AssetImage('lib/assets/pictures/background-pattern.png'),
           fit: BoxFit.cover,
         ),
       ),
       child: SingleChildScrollView(
           child: Column(
-            children: [
-              SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  color: AppColors.primaryColor,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Card(
+              color: AppColors.primaryColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Hasil Assessment',
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'DIN_Next_Rounded')),
+                      SizedBox(height: 4),
+                      Table(
+                        columnWidths: {
+                          0: FlexColumnWidth(1),
+                          1: FlexColumnWidth(2),
+                        },
                         children: [
-                          Text('Hasil Assessment', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'DIN_Next_Rounded')),
-                          SizedBox(height: 4),
-                          Table(
-                            columnWidths: {
-                              0: FlexColumnWidth(1),
-                              1: FlexColumnWidth(2),
-                            },
+                          TableRow(
                             children: [
-                              TableRow(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text('Jumlah Benar', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text(': $correctAnswer / ${question!.questions.where((q) => q.type != 'EY').length}', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.white),),
-                                  ),
-                                ],
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text('Jumlah Benar',
+                                    style: TextStyle(
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.white)),
                               ),
-                              TableRow(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text('Skor', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text(': $point / 100', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                                  ),
-                                ],
-                              ),
-                              TableRow(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text('Pertambahan Elo', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text(': ${status.assessmentEloDelta > 0 ? "+" : ""}${status.assessmentEloDelta}', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                                  ),
-                                ],
-                              ),
-                              TableRow(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text('Poin Didapat', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(0),
-                                    child: Text(': ${status.assessmentPointsEarned > 0 ? "+" : ""}${status.assessmentPointsEarned}', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', color: Colors.amber.shade200)),
-                                  ),
-                                ],
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text(
+                                  ': $correctAnswer / ${question!.questions.where((q) => q.type != 'EY').length}',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'DIN_Next_Rounded',
+                                      color: Colors.white),
+                                ),
                               ),
                             ],
-                          )
+                          ),
+                          TableRow(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text('Skor',
+                                    style: TextStyle(
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.white)),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text(': $point / 100',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                          TableRow(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text('Pertambahan Elo',
+                                    style: TextStyle(
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.white)),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text(
+                                    ': ${status.assessmentEloDelta > 0 ? "+" : ""}${status.assessmentEloDelta}',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                          TableRow(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text('Poin Didapat',
+                                    style: TextStyle(
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.white)),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(0),
+                                child: Text(
+                                    ': ${status.assessmentPointsEarned > 0 ? "+" : ""}${status.assessmentPointsEarned}',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'DIN_Next_Rounded',
+                                        color: Colors.amber.shade200)),
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ),
+                      )
+                    ],
                   ),
                 ),
               ),
-              SizedBox(height: 8),
-              Column(
-                children: List.generate(
-                  question!.questions.length,
-                      (count) => Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: _buildQuestion(count),
-                  ),
-                ),
+            ),
+          ),
+          SizedBox(height: 8),
+          Column(
+            children: List.generate(
+              question!.questions.length,
+              (count) => Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: _buildQuestion(count),
               ),
-            ],
-          )
-      ),
+            ),
+          ),
+        ],
+      )),
     );
   }
 
@@ -377,7 +419,11 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: ListTile(
-              leading: Text('${number + 1}', style: TextStyle(fontSize: 20, fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor)),
+              leading: Text('${number + 1}',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'DIN_Next_Rounded',
+                      color: AppColors.primaryColor)),
               isThreeLine: true,
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -387,8 +433,17 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        allQuestionsAnswered && tapped ? Text("Skor : ${question?.questions[number].score} / ${(100 / (question!.questions.where((q) => q.type != 'EY').isNotEmpty ? question!.questions.where((q) => q.type != 'EY').length : 1)).ceil()}", style: TextStyle(fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold)) : SizedBox(),
-                        Text(question?.questions[number].question ?? 'No question available', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                        allQuestionsAnswered && tapped
+                            ? Text(
+                                "Skor : ${question?.questions[number].score} / ${(100 / (question!.questions.where((q) => q.type != 'EY').isNotEmpty ? question!.questions.where((q) => q.type != 'EY').length : 1)).ceil()}",
+                                style: TextStyle(
+                                    fontFamily: 'DIN_Next_Rounded',
+                                    fontWeight: FontWeight.bold))
+                            : SizedBox(),
+                        Text(
+                            question?.questions[number].question ??
+                                'No question available',
+                            style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
                       ],
                     ),
                   ),
@@ -397,36 +452,42 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.amber.shade100,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.amber.shade400)
-                        ),
-                        child: Text(
-                          '${question?.questions[number].elo} ELO',
-                          style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', fontSize: 12)
-                        ),
+                            color: Colors.amber.shade100,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.amber.shade400)),
+                        child: Text('${question?.questions[number].elo} ELO',
+                            style: TextStyle(
+                                color: Colors.amber.shade900,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'DIN_Next_Rounded',
+                                fontSize: 12)),
                       ),
                       SizedBox(height: 4),
                       Builder(builder: (_) {
                         final pts = _gamificationPoints[number] ?? 0;
                         return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: pts > 0 ? Colors.green.shade50 : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: pts > 0 ? Colors.green.shade400 : Colors.grey.shade300)
-                          ),
-                          child: Text(
-                            pts > 0 ? '+$pts Poin' : '0 Poin',
-                            style: TextStyle(
-                              color: pts > 0 ? Colors.green.shade800 : Colors.grey.shade600,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'DIN_Next_Rounded',
-                              fontSize: 12
-                            )
-                          ),
+                              color: pts > 0
+                                  ? Colors.green.shade50
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                  color: pts > 0
+                                      ? Colors.green.shade400
+                                      : Colors.grey.shade300)),
+                          child: Text(pts > 0 ? '+$pts Poin' : '0 Poin',
+                              style: TextStyle(
+                                  color: pts > 0
+                                      ? Colors.green.shade800
+                                      : Colors.grey.shade600,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'DIN_Next_Rounded',
+                                  fontSize: 12)),
                         );
                       }),
                     ],
@@ -445,7 +506,11 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: ListTile(
-              leading: Text('${number + 1}', style: TextStyle(fontSize: 20, fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor)),
+              leading: Text('${number + 1}',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'DIN_Next_Rounded',
+                      color: AppColors.primaryColor)),
               isThreeLine: true,
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -455,8 +520,17 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        allQuestionsAnswered && tapped ? Text("Skor : Menunggu Review", style: TextStyle(color: Colors.orange, fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold)) : SizedBox(),
-                        Text(question?.questions[number].question ?? 'No question available', style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                        allQuestionsAnswered && tapped
+                            ? Text("Skor : Menunggu Review",
+                                style: TextStyle(
+                                    color: Colors.orange,
+                                    fontFamily: 'DIN_Next_Rounded',
+                                    fontWeight: FontWeight.bold))
+                            : SizedBox(),
+                        Text(
+                            question?.questions[number].question ??
+                                'No question available',
+                            style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
                       ],
                     ),
                   ),
@@ -465,34 +539,33 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.amber.shade100,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.amber.shade400)
-                        ),
-                        child: Text(
-                          '${question?.questions[number].elo} ELO',
-                          style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded', fontSize: 12)
-                        ),
+                            color: Colors.amber.shade100,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.amber.shade400)),
+                        child: Text('${question?.questions[number].elo} ELO',
+                            style: TextStyle(
+                                color: Colors.amber.shade900,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'DIN_Next_Rounded',
+                                fontSize: 12)),
                       ),
                       SizedBox(height: 4),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.orange.shade300)
-                        ),
-                        child: Text(
-                          'Essay',
-                          style: TextStyle(
-                            color: Colors.orange.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DIN_Next_Rounded',
-                            fontSize: 12
-                          )
-                        ),
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.orange.shade300)),
+                        child: Text('Essay',
+                            style: TextStyle(
+                                color: Colors.orange.shade800,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'DIN_Next_Rounded',
+                                fontSize: 12)),
                       ),
                     ],
                   ),
@@ -507,7 +580,10 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
           width: double.infinity,
           height: 100,
           child: Center(
-            child: Text('There is no Question yet', style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
+            child: Text(
+              'There is no Question yet',
+              style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+            ),
           ),
         );
     }
@@ -536,8 +612,10 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
             backgroundColor = Colors.white;
           }
         } else {
-          borderColor = isSelected ? AppColors.primaryColor : Colors.grey.shade300;
-          backgroundColor = isSelected ? Colors.deepPurple.shade50 : Colors.white;
+          borderColor =
+              isSelected ? AppColors.primaryColor : Colors.grey.shade300;
+          backgroundColor =
+              isSelected ? Colors.deepPurple.shade50 : Colors.white;
         }
 
         return AnimatedContainer(
@@ -553,13 +631,13 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
             borderRadius: BorderRadius.circular(15),
             boxShadow: isSelected
                 ? [
-              BoxShadow(
-                color: Colors.deepPurple.withOpacity(0.2),
-                blurRadius: 6,
-                spreadRadius: 1,
-                offset: Offset(0, 2),
-              )
-            ]
+                    BoxShadow(
+                      color: Colors.deepPurple.withOpacity(0.2),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                      offset: Offset(0, 2),
+                    )
+                  ]
                 : [],
           ),
           child: RadioListTile<String>(
@@ -579,13 +657,13 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
             onChanged: tapped
                 ? null
                 : (String? value) {
-              if (value != null) {
-                setState(() {
-                  question.selectedAnswer = value;
-                  question.isCorrect = value == question.correctedAnswer;
-                });
-              }
-            },
+                    if (value != null) {
+                      setState(() {
+                        question.selectedAnswer = value;
+                        question.isCorrect = value == question.correctedAnswer;
+                      });
+                    }
+                  },
           ),
         );
       }).toList(),
@@ -593,8 +671,10 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
   }
 
   Widget _buildTextAnswer(Question question) {
-    TextEditingController controller = TextEditingController(text: question.selectedAnswer);
-    controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+    TextEditingController controller =
+        TextEditingController(text: question.selectedAnswer);
+    controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: controller.text.length));
 
     return Card(
       color: Colors.white,
@@ -635,12 +715,12 @@ class _AlreadyFinishedAssessmentAssessmentScreenState extends State<AlreadyFinis
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
+                  borderSide:
+                      BorderSide(color: AppColors.primaryColor, width: 2),
                 ),
                 contentPadding: EdgeInsets.all(16),
               ),
               enabled: !tapped,
-
               onChanged: (String answer) {
                 setState(() {
                   question.selectedAnswer = answer;

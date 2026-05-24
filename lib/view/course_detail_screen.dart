@@ -71,7 +71,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
   void didUpdateWidget(covariant CourseDetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.id != oldWidget.id || widget.refreshNonce != oldWidget.refreshNonce) {
+    if (widget.id != oldWidget.id ||
+        widget.refreshNonce != oldWidget.refreshNonce) {
       unawaited(_refreshForCurrentSelection());
     }
   }
@@ -214,7 +215,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
 
     if (status.id <= 0) {
       final persistedStatus =
-        await UserChapterService.getChapterStatus(idUser, chapter.id);
+          await UserChapterService.getChapterStatus(idUser, chapter.id);
       status.id = persistedStatus.id;
       status.userId = persistedStatus.userId;
       status.chapterId = persistedStatus.chapterId;
@@ -222,8 +223,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
       status.updatedAt = persistedStatus.updatedAt;
     }
 
-    final result = await UserChapterService.updateChapterStatus(
-      status.id, status);
+    final result =
+        await UserChapterService.updateChapterStatus(status.id, status);
     setState(() {
       listChapter[index].status = result;
     });
@@ -320,7 +321,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
               setState(() {
                 listChapter = updatedList;
               });
-              _chapterCache[_chapterCacheKey()] = List<Chapter>.from(updatedList);
+              _chapterCache[_chapterCacheKey()] =
+                  List<Chapter>.from(updatedList);
               unawaited(_syncCourseProgressFromChapters());
             },
           );
@@ -368,10 +370,12 @@ class _CourseDetail extends State<CourseDetailScreen> {
       }
 
       final total = sorted.length;
-      final desiredCurrentChapter = (completedContiguous + 1).clamp(1, total + 1);
+      final desiredCurrentChapter =
+          (completedContiguous + 1).clamp(1, total + 1);
       final desiredProgress = ((completedContiguous / total) * 100).toInt();
 
-      if (uc!.currentChapter == desiredCurrentChapter && uc!.progress == desiredProgress) {
+      if (uc!.currentChapter == desiredCurrentChapter &&
+          uc!.progress == desiredProgress) {
         return;
       }
 
@@ -413,7 +417,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
     }
 
     final statuses = await Future.wait(
-      list.map((chapter) => UserChapterService.getChapterStatus(idUser, chapter.id)),
+      list.map(
+          (chapter) => UserChapterService.getChapterStatus(idUser, chapter.id)),
     );
 
     for (int i = 0; i < list.length; i++) {
@@ -479,7 +484,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
                   centerTitle: true,
                   leading: Navigator.canPop(context)
                       ? IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon:
+                              const Icon(Icons.arrow_back, color: Colors.white),
                           onPressed: () => Navigator.pop(context),
                         )
                       : null,
@@ -537,14 +543,13 @@ class _CourseDetail extends State<CourseDetailScreen> {
 
                             final chapterIndex = count - 1;
                             final chapter = listChapter[chapterIndex];
-                            
-                            // A chapter is unlocked if:
-                            // 1. It's one of the initial chapters (level <= 8)
-                            // 2. It's the current chapter or below according to uc.currentChapter
-                            // 3. The previous chapter is completed
-                            final bool previousCompleted = chapterIndex > 0 && 
-                                (listChapter[chapterIndex - 1].status?.isCompleted ?? false);
-                                
+
+                            final bool previousCompleted = chapterIndex > 0 &&
+                                (listChapter[chapterIndex - 1]
+                                        .status
+                                        ?.isCompleted ??
+                                    false);
+
                             final isUnlocked = chapter.level <= 8 ||
                                 chapterIndex <= (uc?.currentChapter ?? 0) - 1 ||
                                 previousCompleted;
@@ -727,9 +732,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
               borderRadius: BorderRadius.circular(16),
               onTap: () async {
                 ChapterService.warmupAssessmentAttempt(chapter.id, user!.id)
-                    .catchError((_) {
-                  // Best effort warmup only.
-                });
+                    .catchError((_) {});
 
                 uc?.currentChapter = uc!.currentChapter < chapter.level
                     ? chapter.level
@@ -762,28 +765,28 @@ class _CourseDetail extends State<CourseDetailScreen> {
                   if (returnedIndex != null && returnedStatus != null) {
                     setState(() {
                       listChapter[returnedIndex].status =
-                          ChapterStatus.fromJson(returnedStatus as Map<String, dynamic>);
+                          ChapterStatus.fromJson(
+                              returnedStatus as Map<String, dynamic>);
                     });
-                    // Sync locally immediately so the next chapter unlocks right away
+
                     unawaited(_syncCourseProgressFromChapters());
                   }
 
                   if (idCourse != 0) {
                     await ApiCacheService.clearCacheContaining('chapter');
                     await ApiCacheService.clearCacheContaining('userchapter');
-                    // Await these to ensure the UI stays updated with the latest server state
+
                     await getChapter(idCourse);
                     await getUserCourse();
                   }
                 }
-
               },
               child: Padding(
                 padding: const EdgeInsets.only(
                     top: 16, left: 16, right: 16, bottom: 16),
                 child: Column(
                   children: [
-                    SizedBox(height: 48), // Space for the floating badge
+                    SizedBox(height: 48),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -853,8 +856,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                           fontFamily: 'Modak',
                           shadows: [
                             Shadow(
-                              color: Colors.green.shade900
-                                  .withOpacity(0.7),
+                              color: Colors.green.shade900.withOpacity(0.7),
                               blurRadius: 0,
                               offset: Offset(3, 3),
                             ),
@@ -917,7 +919,6 @@ class _CourseDetail extends State<CourseDetailScreen> {
               ),
             ),
           ),
-
           Positioned(
             top: -25,
             left: 0,
@@ -934,8 +935,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                       color: Colors.green.shade900.withOpacity(0.8),
                       blurRadius: 10,
                       spreadRadius: 2,
-                      offset: Offset(
-                          0, 6),
+                      offset: Offset(0, 6),
                     ),
                   ],
                 ),

@@ -6,13 +6,15 @@ import 'api_cache_service.dart';
 import '../global_var.dart';
 
 class BadgeService {
-
-  static Future<List<BadgeModel>> getBadgeListCourseByCourseId(int courseId) async {
+  static Future<List<BadgeModel>> getBadgeListCourseByCourseId(
+      int courseId) async {
     try {
-      final response = await ApiCacheService.get(Uri.parse('${GlobalVar.baseUrl}/badge/course/$courseId'));
+      final response = await ApiCacheService.get(
+          Uri.parse('${GlobalVar.baseUrl}/badge/course/$courseId'));
       final result = jsonDecode(response.body);
 
-      return List<BadgeModel>.from(result.map((item) => BadgeModel.fromJson(item)));
+      return List<BadgeModel>.from(
+          result.map((item) => BadgeModel.fromJson(item)));
     } catch (error) {
       throw Exception(error.toString());
     }
@@ -66,33 +68,32 @@ class BadgeService {
     }
   }
 
-  static Future<void> createUserBadge(int userId, int badgeId) async{
-      try {
-        await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userbadge'), body: {
-          'userId': userId,
-          'badgeId': badgeId
-        });
-      } catch(e){
-        throw Exception(e.toString());
-      }
+  static Future<void> createUserBadge(int userId, int badgeId) async {
+    try {
+      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userbadge'),
+          body: {'userId': userId, 'badgeId': badgeId});
+    } catch (e) {
+      throw Exception(e.toString());
+    }
   }
 
-  static Future<void> createUserBadgeByChapterId(int userId, int badgeId) async{
+  static Future<void> createUserBadgeByChapterId(
+      int userId, int badgeId) async {
     try {
-      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userbadge'), body: {
-        'userId': userId,
-        'badgeId': badgeId
-      });
-    } catch(e){
+      await ApiCacheService.post(Uri.parse('${GlobalVar.baseUrl}/userbadge'),
+          body: {'userId': userId, 'badgeId': badgeId});
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
 
   static Future<void> updateUserBadgeStatus(int badgeId, bool status) async {
     try {
-      await ApiCacheService.put(Uri.parse('${GlobalVar.baseUrl}/userbadge/$badgeId'), body: {
-        'isPurchased': status,
-      });
+      await ApiCacheService.put(
+          Uri.parse('${GlobalVar.baseUrl}/userbadge/$badgeId'),
+          body: {
+            'isPurchased': status,
+          });
     } catch (e) {
       throw Exception(e.toString());
     }

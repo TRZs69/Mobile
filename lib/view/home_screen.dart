@@ -63,7 +63,8 @@ class _HomeState extends State<HomeScreen> {
     if (buttonContext == null) return;
 
     final buttonBox = buttonContext.findRenderObject() as RenderBox;
-    final overlayBox = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
     final topLeft = buttonBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     final bottomRight = buttonBox.localToGlobal(
       buttonBox.size.bottomRight(Offset.zero),
@@ -112,7 +113,8 @@ class _HomeState extends State<HomeScreen> {
           value: 'start',
           child: Row(
             children: [
-              Icon(Icons.replay_rounded, size: 18, color: AppColors.primaryColor),
+              Icon(Icons.replay_rounded,
+                  size: 18, color: AppColors.primaryColor),
               SizedBox(width: 8),
               Text(
                 'Mulai ulang tutorial',
@@ -167,7 +169,6 @@ class _HomeState extends State<HomeScreen> {
   void didUpdateWidget(covariant HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      // Refresh user and course data when switching back to Home tab
       unawaited(getUserFromSharedPreference());
       unawaited(getEnrolledCourse());
     }
@@ -184,7 +185,9 @@ class _HomeState extends State<HomeScreen> {
       if (cachedCourses != null || cachedUser != null) {
         setState(() {
           idUser = storedIdUser;
-          allCourses = cachedCourses != null ? List<Course>.from(cachedCourses) : allCourses;
+          allCourses = cachedCourses != null
+              ? List<Course>.from(cachedCourses)
+              : allCourses;
           user = cachedUser ?? user;
           isLoading = false;
         });
@@ -204,7 +207,7 @@ class _HomeState extends State<HomeScreen> {
     unawaited(getAllUser());
   }
 
-  Future<void> getEnrolledCourse() async{
+  Future<void> getEnrolledCourse() async {
     if (_isFetchingEnrolled) {
       return;
     }
@@ -212,7 +215,7 @@ class _HomeState extends State<HomeScreen> {
     _isFetchingEnrolled = true;
     pref = await SharedPreferences.getInstance();
     int? id = pref.getInt('userId');
-    if(id != null) {
+    if (id != null) {
       try {
         final result = await CourseService.getEnrolledCourse(
           id,
@@ -238,7 +241,9 @@ class _HomeState extends State<HomeScreen> {
         setState(() {
           isLoading = false;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Koneksi ke server terlalu lambat. Coba lagi nanti.')),
+            SnackBar(
+                content:
+                    Text('Koneksi ke server terlalu lambat. Coba lagi nanti.')),
           );
         });
       } catch (e) {
@@ -246,7 +251,9 @@ class _HomeState extends State<HomeScreen> {
         setState(() {
           isLoading = false;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal memuat course. Periksa koneksi internet Anda.')),
+            SnackBar(
+                content: Text(
+                    'Gagal memuat course. Periksa koneksi internet Anda.')),
           );
         });
         print('Error getEnrolledCourse: $e');
@@ -306,13 +313,17 @@ class _HomeState extends State<HomeScreen> {
     } on TimeoutException catch (_) {
       setState(() {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Koneksi ke server terlalu lambat. Coba lagi nanti.')),
+          SnackBar(
+              content:
+                  Text('Koneksi ke server terlalu lambat. Coba lagi nanti.')),
         );
       });
     } catch (e) {
       setState(() {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memuat data pengguna. Periksa koneksi internet Anda.')),
+          SnackBar(
+              content: Text(
+                  'Gagal memuat data pengguna. Periksa koneksi internet Anda.')),
         );
       });
       print('Error getAllUser: $e');
@@ -383,126 +394,131 @@ class _HomeState extends State<HomeScreen> {
           ),
         ),
         isLoading
-          ? Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                      'lib/assets/pictures/background-pattern.png'
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 10),
-                    Text(
-                      "Mohon Tunggu",
-                      style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'DIN_Next_Rounded'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-          : allCourses.isEmpty && user == null
             ? Scaffold(
-              body: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(
-                        'lib/assets/pictures/background-pattern.png'
+                backgroundColor: Colors.transparent,
+                body: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(
+                          'lib/assets/pictures/background-pattern.png'),
+                      fit: BoxFit.cover,
                     ),
-                    fit: BoxFit.cover,
                   ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(LineAwesomeIcons.frown, size: 72, color: Colors.red),
-                        SizedBox(height: 20),
+                        CircularProgressIndicator(),
+                        SizedBox(height: 10),
                         Text(
-                          'Gagal memuat data. Periksa koneksi internet Anda atau coba lagi nanti.',
-                          style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 16,
-                          children: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  isLoading = true;
-                                });
-                                getEnrolledCourse();
-                                getAllUser();
-                              },
-                              child: Text('Coba Lagi', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                              ),
-                              onPressed: () {
-                                logout();
-                              },
-                              child: Text('Log Out', style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor)),
-                            )
-                          ],
+                          "Mohon Tunggu",
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'DIN_Next_Rounded'),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            )
-            : Scaffold(
-              body: SingleChildScrollView(
-                child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(
-                            'lib/assets/pictures/background-pattern.png'
+              )
+            : allCourses.isEmpty && user == null
+                ? Scaffold(
+                    body: Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(
+                              'lib/assets/pictures/background-pattern.png'),
+                          fit: BoxFit.cover,
                         ),
-                        fit: BoxFit.cover,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(LineAwesomeIcons.frown,
+                                  size: 72, color: Colors.red),
+                              SizedBox(height: 20),
+                              Text(
+                                'Gagal memuat data. Periksa koneksi internet Anda atau coba lagi nanti.',
+                                style:
+                                    TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                spacing: 16,
+                                children: [
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryColor,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        isLoading = true;
+                                      });
+                                      getEnrolledCourse();
+                                      getAllUser();
+                                    },
+                                    child: Text('Coba Lagi',
+                                        style: TextStyle(
+                                            fontFamily: 'DIN_Next_Rounded',
+                                            color: Colors.white)),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      logout();
+                                    },
+                                    child: Text('Log Out',
+                                        style: TextStyle(
+                                            fontFamily: 'DIN_Next_Rounded',
+                                            color: AppColors.primaryColor)),
+                                  )
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    child: Padding(
-                        padding: const EdgeInsets.all(0),
-                        child: Column(
-                          children: [
-                            SizedBox(height: 30,),
-                            _buildProfile(),
-                            // _buildChatShortcut(),
-                            _buildStats(),
-                            _buildMyProgress(),
-                            _buildMore(),
-                            _buildTodayLeaderboard(),
-                          ],
-                        )
-                    )
-                ),
-              )
-            )
+                  )
+                : Scaffold(
+                    body: SingleChildScrollView(
+                    child: Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(
+                                'lib/assets/pictures/background-pattern.png'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: Padding(
+                            padding: const EdgeInsets.all(0),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 30,
+                                ),
+                                _buildProfile(),
+                                _buildStats(),
+                                _buildMyProgress(),
+                                _buildMore(),
+                                _buildTodayLeaderboard(),
+                              ],
+                            ))),
+                  ))
       ],
     );
   }
 
-  Widget _buildTodayLeaderboard(){
+  Widget _buildTodayLeaderboard() {
     return SizedBox(
       width: double.infinity,
       child: Padding(
@@ -514,76 +530,93 @@ class _HomeState extends State<HomeScreen> {
                 style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                     color: AppColors.primaryColor,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'DIN_Next_Rounded'
-                )),
+                    fontFamily: 'DIN_Next_Rounded')),
             SizedBox(
               height: 16,
             ),
             Column(
-              children: list.isNotEmpty ?
-              List.generate(list.length > 3 ? 3 : list.length, (index) =>
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: (switch (index) {
-                              0 => AssetImage('lib/assets/leaderboards/banner-gold-vertical.png'),
-                              1 => AssetImage('lib/assets/leaderboards/banner-silver-vertical.png'),
-                              2 => AssetImage('lib/assets/leaderboards/banner-bronze-vertical.png'),
-                              _ => AssetImage('lib/assets/leaderboards/banner-silver.png'),
-                            }),
-                          fit: BoxFit.fitWidth,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListTile(
-                        leading: Image.asset(
-                          switch (index) {
-                            0 => 'lib/assets/1st.png',
-                            1 => 'lib/assets/2nd.png',
-                            2 => 'lib/assets/3rd.png',
-                            _ => ''
-                          }
-                          , height: 50, width: 50,),
-                        title: Text(
-                          list[index].name,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'DIN_Next_Rounded',
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              list[index].studentId ?? '',
-                              style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'DIN_Next_Rounded'),
+              children: list.isNotEmpty
+                  ? List.generate(
+                      list.length > 3 ? 3 : list.length,
+                      (index) => Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            Text(
-                              list[index].eloTitle ?? 'Beginner',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54, fontFamily: 'DIN_Next_Rounded'),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: (switch (index) {
+                                    0 => AssetImage(
+                                        'lib/assets/leaderboards/banner-gold-vertical.png'),
+                                    1 => AssetImage(
+                                        'lib/assets/leaderboards/banner-silver-vertical.png'),
+                                    2 => AssetImage(
+                                        'lib/assets/leaderboards/banner-bronze-vertical.png'),
+                                    _ => AssetImage(
+                                        'lib/assets/leaderboards/banner-silver.png'),
+                                  }),
+                                  fit: BoxFit.fitWidth,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: ListTile(
+                                leading: Image.asset(
+                                  switch (index) {
+                                    0 => 'lib/assets/1st.png',
+                                    1 => 'lib/assets/2nd.png',
+                                    2 => 'lib/assets/3rd.png',
+                                    _ => ''
+                                  },
+                                  height: 50,
+                                  width: 50,
+                                ),
+                                title: Text(
+                                  list[index].name,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    fontFamily: 'DIN_Next_Rounded',
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      list[index].studentId ?? '',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.black,
+                                          fontFamily: 'DIN_Next_Rounded'),
+                                    ),
+                                    Text(
+                                      list[index].eloTitle ?? 'Beginner',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black54,
+                                          fontFamily: 'DIN_Next_Rounded'),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Text(
+                                  '${list[index].elo ?? 0} ELO',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                      fontFamily: 'DIN_Next_Rounded'),
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                        trailing: Text(
-                          '${list[index].elo ?? 0} ELO',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'DIN_Next_Rounded'),
-                        ),
-                      ),
-                    ),
-                  )
-              )
-              : [
-                Center(
-                  child: Text(
-                      'Belum ada Pengguna',
-                      style: TextStyle(
-                          fontFamily: 'DIN_Next_Rounded'
-                      )),
-                )
-              ],
+                          ))
+                  : [
+                      Center(
+                        child: Text('Belum ada Pengguna',
+                            style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+                      )
+                    ],
             ),
           ],
         ),
@@ -606,8 +639,7 @@ class _HomeState extends State<HomeScreen> {
                 right: 30,
                 width: 60,
                 height: 60,
-                child: Image.asset('lib/assets/check.png')
-            ),
+                child: Image.asset('lib/assets/check.png')),
             SizedBox(
               width: double.infinity,
               child: Padding(
@@ -616,82 +648,97 @@ class _HomeState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Progress Saya',
-                        style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                            color: AppColors.primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DIN_Next_Rounded'
-                        )),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall!
+                            .copyWith(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'DIN_Next_Rounded')),
                     Padding(
                       padding: EdgeInsets.only(top: 12),
                       child: lastestCourse == null
-                        ? SizedBox(
-                          height: 80,
-                          width: double.infinity,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [Center(
-                              child: Text(
-                                  'Akses Course untuk menampilkan Progress Bar!',
-                                style: TextStyle(
-                                  fontFamily: "DIN_Next_Rounded",
-                                ),
-                              ),
-                            )],
-                          ),
-                        )
-                        : Row(
-                          children: [
-                            SizedBox(
-                              width: 80,
+                          ? SizedBox(
                               height: 80,
-                              child: Stack(
-                                children: <Widget>[
+                              width: double.infinity,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
                                   Center(
-                                    child: SizedBox(
-                                      width: 70,
-                                      height: 70,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 10,
-                                        value: lastestCourse!.progress! / 100,
-                                        strokeCap: StrokeCap.round,
-                                        color: AppColors.primaryColor,
-                                        backgroundColor: AppColors.accentColor,
+                                    child: Text(
+                                      'Akses Course untuk menampilkan Progress Bar!',
+                                      style: TextStyle(
+                                        fontFamily: "DIN_Next_Rounded",
                                       ),
                                     ),
-                                  ),
-                                  Center(child: Text('${lastestCourse!.progress!}%', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),)),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              margin: EdgeInsets.only(left: 16),
-                              width: (screenWidth / 9) * 5,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(lastestCourse!.courseName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium!
-                                          .copyWith(
-                                          color: AppColors.primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'DIN_Next_Rounded'
-                                      )),
-                                  Text('Sudah ${lastestCourse!.progress!}%! Lanjutkan Pengerjaan Course', style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium!
-                                      .copyWith(
-                                      color: AppColors.primaryColor,
-                                      fontWeight: FontWeight.w500,
-                                      fontFamily: 'DIN_Next_Rounded'
-                                  )),
+                                  )
                                 ],
                               ),
                             )
-                          ],
-                        ),
+                          : Row(
+                              children: [
+                                SizedBox(
+                                  width: 80,
+                                  height: 80,
+                                  child: Stack(
+                                    children: <Widget>[
+                                      Center(
+                                        child: SizedBox(
+                                          width: 70,
+                                          height: 70,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 10,
+                                            value:
+                                                lastestCourse!.progress! / 100,
+                                            strokeCap: StrokeCap.round,
+                                            color: AppColors.primaryColor,
+                                            backgroundColor:
+                                                AppColors.accentColor,
+                                          ),
+                                        ),
+                                      ),
+                                      Center(
+                                          child: Text(
+                                        '${lastestCourse!.progress!}%',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 13),
+                                      )),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  margin: EdgeInsets.only(left: 16),
+                                  width: (screenWidth / 9) * 5,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(lastestCourse!.courseName,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium!
+                                              .copyWith(
+                                                  color: AppColors.primaryColor,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      'DIN_Next_Rounded')),
+                                      Text(
+                                          'Sudah ${lastestCourse!.progress!}%! Lanjutkan Pengerjaan Course',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium!
+                                              .copyWith(
+                                                  color: AppColors.primaryColor,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontFamily:
+                                                      'DIN_Next_Rounded')),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
                     ),
                     SizedBox(height: 8)
                   ],
@@ -719,23 +766,24 @@ class _HomeState extends State<HomeScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    color: AppColors.primaryColor,
-                    fontFamily: 'DIN_Next_Rounded',
-                  ),
+                        color: AppColors.primaryColor,
+                        fontFamily: 'DIN_Next_Rounded',
+                      ),
                 ),
                 Text(
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'DIN_Next_Rounded',
-                  ),
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'DIN_Next_Rounded',
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.amber,
                     borderRadius: BorderRadius.circular(20),
@@ -745,10 +793,10 @@ class _HomeState extends State<HomeScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'DIN_Next_Rounded',
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontFamily: 'DIN_Next_Rounded',
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
               ],
@@ -787,27 +835,31 @@ class _HomeState extends State<HomeScreen> {
                   child: ClipOval(
                     child: user?.image != null && user?.image != ""
                         ? Image.network(
-                      user!.image!,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
-                      },
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.person,
-                        size: 30,
-                        color: Colors.white,
-                      ),
-                    )
+                            user!.image!,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(
+                                  child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ));
+                            },
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.white,
+                            ),
+                          )
                         : Center(
-                      child: Icon(
-                        Icons.person,
-                        size: 30,
-                        color: Colors.white,
-                      ),
-                    ),
+                            child: Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -825,7 +877,8 @@ class _HomeState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChatbotScreen(startFresh: false)),
+            MaterialPageRoute(
+                builder: (context) => const ChatbotScreen(startFresh: false)),
           );
         },
         style: ElevatedButton.styleFrom(
@@ -839,7 +892,8 @@ class _HomeState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.chat_bubble_outline, size: 28, color: Colors.white),
+            const Icon(Icons.chat_bubble_outline,
+                size: 28, color: Colors.white),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -849,18 +903,18 @@ class _HomeState extends State<HomeScreen> {
                   Text(
                     'Levely Chat',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'DIN_Next_Rounded',
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'DIN_Next_Rounded',
+                        ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Ngobrol dengan Levely untuk bantu jawab pertanyaanmu.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
-                      fontFamily: 'DIN_Next_Rounded',
-                    ),
+                          color: Colors.white70,
+                          fontFamily: 'DIN_Next_Rounded',
+                        ),
                   ),
                 ],
               ),
@@ -878,16 +932,15 @@ class _HomeState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Card(
           elevation: 8,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16)
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Container(
             width: double.infinity,
             height: 200,
             decoration: BoxDecoration(
               image: DecorationImage(
-                  image: AssetImage('lib/assets/pictures/dashboard.png'),
-                  fit: BoxFit.cover,
+                image: AssetImage('lib/assets/pictures/dashboard.png'),
+                fit: BoxFit.cover,
               ),
               borderRadius: BorderRadius.circular(16),
             ),
@@ -898,29 +951,36 @@ class _HomeState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: _buildInfoColumn(
-                            LineAwesomeIcons.medal_solid, 'Lencana', '${userBadges?.length ?? 0}', AppColors.accentColor),
+                            LineAwesomeIcons.medal_solid,
+                            'Lencana',
+                            '${userBadges?.length ?? 0}',
+                            AppColors.accentColor),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildInfoColumn(
-                            LineAwesomeIcons.user_check_solid, 'Course', '${allCourses.isNotEmpty ? allCourses.length : 0}', AppColors.accentColor),
+                            LineAwesomeIcons.user_check_solid,
+                            'Course',
+                            '${allCourses.isNotEmpty ? allCourses.length : 0}',
+                            AppColors.accentColor),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildInfoColumn(
-                            LineAwesomeIcons.trophy_solid, 'Peringkat', '$rank / ${list.length}', AppColors.accentColor),
+                            LineAwesomeIcons.trophy_solid,
+                            'Peringkat',
+                            '$rank / ${list.length}',
+                            AppColors.accentColor),
                       ),
                     ],
                   ),
                   SizedBox(height: 24),
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Row(
@@ -941,18 +1001,24 @@ class _HomeState extends State<HomeScreen> {
                                     'Total Poin',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                                      color: Colors.white,
-                                      fontFamily: 'DIN_Next_Rounded',
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge!
+                                        .copyWith(
+                                          color: Colors.white,
+                                          fontFamily: 'DIN_Next_Rounded',
+                                        ),
                                   ),
                                   Text("${user?.points ?? 0}",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          fontFamily: 'DIN_Next_Rounded'))
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge!
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                              fontFamily: 'DIN_Next_Rounded'))
                                 ],
                               ),
                             )
@@ -979,18 +1045,24 @@ class _HomeState extends State<HomeScreen> {
                                     'Rating ELO',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                                      color: Colors.white,
-                                      fontFamily: 'DIN_Next_Rounded',
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge!
+                                        .copyWith(
+                                          color: Colors.white,
+                                          fontFamily: 'DIN_Next_Rounded',
+                                        ),
                                   ),
                                   Text("${user?.elo ?? 0}",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          fontFamily: 'DIN_Next_Rounded'))
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge!
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                              fontFamily: 'DIN_Next_Rounded'))
                                 ],
                               ),
                             )
@@ -1032,22 +1104,15 @@ class _HomeState extends State<HomeScreen> {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelMedium!
-                    .copyWith(
-                  color: Colors.white,
-                  fontFamily:
-                  'DIN_Next_Rounded',
-                ),
+                style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                      color: Colors.white,
+                      fontFamily: 'DIN_Next_Rounded',
+                    ),
               ),
               Text(value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium!
-                      .copyWith(
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       fontFamily: 'DIN_Next_Rounded'))
@@ -1068,61 +1133,55 @@ class _HomeState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Jelajahi Course',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall!
-                  .copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryColor,
-                fontFamily: 'DIN_Next_Rounded',
-              ),
+              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryColor,
+                    fontFamily: 'DIN_Next_Rounded',
+                  ),
             ),
           ),
           SizedBox(height: 16),
           allCourses.isEmpty
-          ? SizedBox(
-            height: 200,
-            width: double.infinity,
-            child: Center(
-              child: Text(
-                  'Kamu belum terdaftar pada course apapun',
-                style: TextStyle(
-                  fontFamily: "DIN_Next_Rounded",
+              ? SizedBox(
+                  height: 200,
+                  width: double.infinity,
+                  child: Center(
+                    child: Text(
+                      'Kamu belum terdaftar pada course apapun',
+                      style: TextStyle(
+                        fontFamily: "DIN_Next_Rounded",
+                      ),
+                    ),
+                  ),
+                )
+              : CarouselSlider.builder(
+                  itemCount: allCourses.length,
+                  itemBuilder: (context, index, realIndex) {
+                    final course = allCourses[index];
+                    return _courseCard(course);
+                  },
+                  options: CarouselOptions(
+                    height: 200,
+                    enlargeCenterPage: false,
+                    autoPlay: false,
+                    aspectRatio: 4 / 5,
+                    viewportFraction: 0.6,
+                    enableInfiniteScroll: true,
+                  ),
                 ),
-              ),
-            ),
-          )
-          : CarouselSlider.builder(
-            itemCount: allCourses.length,
-            itemBuilder: (context, index, realIndex) {
-              final course = allCourses[index];
-              return _courseCard(course);
-            },
-            options: CarouselOptions(
-              height: 200,
-              enlargeCenterPage: false,
-              autoPlay: false,
-              aspectRatio: 4 / 5,
-              viewportFraction: 0.6,
-              enableInfiniteScroll: true,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _courseCard(
-      Course course
-      ) {
+  Widget _courseCard(Course course) {
     return GestureDetector(
       onTap: () async {
         unawaited(pref.setInt('lastestSelectedCourse', course.id));
         widget.updateIndex(2);
       },
       child: Container(
-        width: MediaQuery.of(context).size.width *
-            0.8,
+        width: MediaQuery.of(context).size.width * 0.8,
         height: 200,
         margin: EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
@@ -1147,14 +1206,17 @@ class _HomeState extends State<HomeScreen> {
                         fit: BoxFit.cover,
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                              child: CircularProgressIndicator());
                         },
-                        errorBuilder: (context, error, stackTrace) => Image.asset(
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
                           'lib/assets/pictures/imk-picture.jpg',
                           fit: BoxFit.cover,
                         ),
                       )
-                    : Image.asset('lib/assets/pictures/imk-picture.jpg', fit: BoxFit.cover),
+                    : Image.asset('lib/assets/pictures/imk-picture.jpg',
+                        fit: BoxFit.cover),
               ),
             ),
             Positioned(
@@ -1219,6 +1281,4 @@ class _HomeState extends State<HomeScreen> {
       ),
     );
   }
-
-
 }

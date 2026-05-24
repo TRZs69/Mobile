@@ -76,7 +76,8 @@ class AssessmentAttempt {
   });
 
   factory AssessmentAttempt.fromJson(Map<String, dynamic> json) {
-    final rawQuestions = json['questions'] is List ? json['questions'] as List : const [];
+    final rawQuestions =
+        json['questions'] is List ? json['questions'] as List : const [];
     final questions = rawQuestions
         .whereType<Map<String, dynamic>>()
         .map(_questionFromJson)
@@ -102,8 +103,12 @@ class AssessmentAttempt {
     final submittedAtRaw = json['submittedAt'];
 
     return AssessmentAttempt(
-      attemptId: json['attemptId'] is int ? json['attemptId'] as int : int.tryParse('${json['attemptId']}') ?? 0,
-      chapterId: json['chapterId'] is int ? json['chapterId'] as int : int.tryParse('${json['chapterId']}') ?? 0,
+      attemptId: json['attemptId'] is int
+          ? json['attemptId'] as int
+          : int.tryParse('${json['attemptId']}') ?? 0,
+      chapterId: json['chapterId'] is int
+          ? json['chapterId'] as int
+          : int.tryParse('${json['chapterId']}') ?? 0,
       instruction: (json['instruction'] ?? '').toString(),
       questions: questions,
       currentQuestion: currentQuestion,
@@ -114,11 +119,21 @@ class AssessmentAttempt {
       submittedAt: submittedAtRaw is String && submittedAtRaw.isNotEmpty
           ? DateTime.tryParse(submittedAtRaw)
           : null,
-      courseEloBefore: json['courseEloBefore'] != null ? (json['courseEloBefore'] as num).toInt() : null,
-      courseEloAfter: json['courseEloAfter'] != null ? (json['courseEloAfter'] as num).toInt() : null,
-      targetNextQuestionElo: json['targetNextQuestionElo'] != null ? (json['targetNextQuestionElo'] as num).toInt() : null,
-      eloDeltaQuestion: json['eloDeltaQuestion'] != null ? (json['eloDeltaQuestion'] as num).toDouble() : null,
-      pointsAwardedPreview: json['pointsAwardedPreview'] != null ? (json['pointsAwardedPreview'] as num).toDouble() : null,
+      courseEloBefore: json['courseEloBefore'] != null
+          ? (json['courseEloBefore'] as num).toInt()
+          : null,
+      courseEloAfter: json['courseEloAfter'] != null
+          ? (json['courseEloAfter'] as num).toInt()
+          : null,
+      targetNextQuestionElo: json['targetNextQuestionElo'] != null
+          ? (json['targetNextQuestionElo'] as num).toInt()
+          : null,
+      eloDeltaQuestion: json['eloDeltaQuestion'] != null
+          ? (json['eloDeltaQuestion'] as num).toDouble()
+          : null,
+      pointsAwardedPreview: json['pointsAwardedPreview'] != null
+          ? (json['pointsAwardedPreview'] as num).toDouble()
+          : null,
     );
   }
 

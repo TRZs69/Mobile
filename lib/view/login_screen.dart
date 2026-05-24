@@ -30,10 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
   void login() async {
     if (isLoading) return;
 
-    if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+    if (emailController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Username dan Password tidak boleh kosong", style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
+          content: Text("Username dan Password tidak boleh kosong",
+              style: TextStyle(fontFamily: 'DIN_Next_Rounded')),
           backgroundColor: Colors.red,
         ),
       );
@@ -44,13 +46,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       var client = http.Client();
-      final response = await UserService.login(emailController.text, passwordController.text).timeout(Duration(seconds: 15));
+      final response =
+          await UserService.login(emailController.text, passwordController.text)
+              .timeout(Duration(seconds: 15));
 
       if (response['code'] == 200) {
         Login credential = response['value'];
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
-        if(credential.role == 'STUDENT') {
+        if (credential.role == 'STUDENT') {
           await prefs.setInt('userId', credential.id);
           await prefs.setString('name', credential.name);
           await prefs.setString('role', credential.role);
@@ -69,7 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
             SnackBar(content: Text("Mohon Login sebagai mahasiswa")),
           );
         }
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("${response['message']}")),
@@ -81,10 +84,11 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text("Waktu koneksi habis. Coba lagi nanti.")),
       );
       print("Waktu koneksi habis. Coba lagi nanti.");
-    }
-    on SocketException catch (_) {
+    } on SocketException catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.")),
+        SnackBar(
+            content: Text(
+                "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.")),
       );
       print("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
     } catch (e) {
@@ -136,7 +140,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -148,21 +153,25 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (context, constraints) {
             final availableWidth = constraints.maxWidth;
             final availableHeight = constraints.maxHeight;
-            final contentMaxWidth = availableWidth > 600 ? 520.0 : availableWidth;
-            final baseFontSize = (availableWidth * 0.04).clamp(14.0, 18.0).toDouble();
-            final titleFontSize = (baseFontSize * 1.5).clamp(20.0, 28.0).toDouble();
+            final contentMaxWidth =
+                availableWidth > 600 ? 520.0 : availableWidth;
+            final baseFontSize =
+                (availableWidth * 0.04).clamp(14.0, 18.0).toDouble();
+            final titleFontSize =
+                (baseFontSize * 1.5).clamp(20.0, 28.0).toDouble();
             final headerHeight = (isLandscape && availableHeight < 500)
                 ? 0.0
                 : (availableHeight * 0.34).clamp(180.0, 320.0).toDouble();
             final sidePadding = availableWidth < 360 ? 12.0 : 16.0;
             final topGap = isLandscape ? 8.0 : 16.0;
             final sectionGap = isLandscape
-              ? (availableHeight * 0.02).clamp(12.0, 18.0).toDouble()
-              : (availableHeight * 0.04).clamp(16.0, 30.0).toDouble();
+                ? (availableHeight * 0.02).clamp(12.0, 18.0).toDouble()
+                : (availableHeight * 0.04).clamp(16.0, 30.0).toDouble();
             final innerVerticalPadding = isLandscape ? 10.0 : 16.0;
             final helpToButtonGap = isLandscape ? 12.0 : 20.0;
-            final bottomSpacing =
-              keyboardInset > 0 ? keyboardInset + 16 : (isLandscape ? 8.0 : 16.0) + bottomInset;
+            final bottomSpacing = keyboardInset > 0
+                ? keyboardInset + 16
+                : (isLandscape ? 8.0 : 16.0) + bottomInset;
 
             return SingleChildScrollView(
               padding: EdgeInsets.only(bottom: bottomSpacing),
@@ -187,7 +196,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: Container(
                                         decoration: BoxDecoration(
                                           image: DecorationImage(
-                                            image: AssetImage('lib/assets/pictures/background-pattern.png'),
+                                            image: AssetImage(
+                                                'lib/assets/pictures/background-pattern.png'),
                                             fit: BoxFit.fill,
                                           ),
                                         ),
@@ -202,7 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: Container(
                                         decoration: BoxDecoration(
                                           image: DecorationImage(
-                                            image: AssetImage('lib/assets/vectors/welcome_primary.png'),
+                                            image: AssetImage(
+                                                'lib/assets/vectors/welcome_primary.png'),
                                           ),
                                         ),
                                       ),
@@ -213,7 +224,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                           : SizedBox.shrink(),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: sidePadding, vertical: innerVerticalPadding),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: sidePadding,
+                            vertical: innerVerticalPadding),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
@@ -237,7 +250,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   color: Colors.white,
                                   border: Border.all(
-                                    color: const Color.fromRGBO(68, 31, 127, .3),
+                                    color:
+                                        const Color.fromRGBO(68, 31, 127, .3),
                                   ),
                                   boxShadow: [
                                     BoxShadow(
@@ -250,19 +264,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Column(
                                   children: <Widget>[
                                     Container(
-                                      padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                      padding:
+                                          EdgeInsets.fromLTRB(16, 8, 16, 8),
                                       decoration: BoxDecoration(
                                         border: Border(
                                           bottom: BorderSide(
-                                            color: Color.fromRGBO(68, 31, 127, .3),
+                                            color:
+                                                Color.fromRGBO(68, 31, 127, .3),
                                           ),
                                         ),
                                       ),
                                       child: TextField(
-                                        style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                                        style: TextStyle(
+                                            fontFamily: 'DIN_Next_Rounded'),
                                         controller: emailController,
                                         inputFormatters: [
-                                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                          FilteringTextInputFormatter.deny(
+                                              RegExp(r'\s')),
                                         ],
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
@@ -278,10 +296,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Container(
                                       padding: EdgeInsets.fromLTRB(16, 8, 8, 8),
                                       child: TextField(
-                                        style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                                        style: TextStyle(
+                                            fontFamily: 'DIN_Next_Rounded'),
                                         controller: passwordController,
                                         inputFormatters: [
-                                          FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                          FilteringTextInputFormatter.deny(
+                                              RegExp(r'\s')),
                                         ],
                                         obscureText: _obscurePassword,
                                         decoration: InputDecoration(
@@ -294,12 +314,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                           suffixIcon: IconButton(
                                             icon: Icon(
-                                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                              color: AppColors.primaryColor.withOpacity(0.7),
+                                              _obscurePassword
+                                                  ? Icons.visibility_off
+                                                  : Icons.visibility,
+                                              color: AppColors.primaryColor
+                                                  .withOpacity(0.7),
                                             ),
                                             onPressed: () {
                                               setState(() {
-                                                _obscurePassword = !_obscurePassword;
+                                                _obscurePassword =
+                                                    !_obscurePassword;
                                               });
                                             },
                                           ),
@@ -341,7 +365,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   height: 50,
                                   child: Center(
                                     child: isLoading
-                                        ? CircularProgressIndicator(color: Colors.white)
+                                        ? CircularProgressIndicator(
+                                            color: Colors.white)
                                         : Text(
                                             "Login",
                                             style: TextStyle(
@@ -354,7 +379,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: (isLandscape ? 8.0 : 16.0) + bottomInset),
+                            SizedBox(
+                                height:
+                                    (isLandscape ? 8.0 : 16.0) + bottomInset),
                           ],
                         ),
                       ),

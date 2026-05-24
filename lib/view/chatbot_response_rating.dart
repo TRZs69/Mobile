@@ -61,7 +61,7 @@ class _ChatbotResponseRatingState extends State<ChatbotResponseRating> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         if (data['found'] == true) {
           setState(() {
             _userRequest = data['userRequest'];
@@ -74,7 +74,8 @@ class _ChatbotResponseRatingState extends State<ChatbotResponseRating> {
             _isLimitReached = true;
           });
         } else {
-          setState(() => _error = data['message'] ?? "Belum ada riwayat chat untuk dinilai.");
+          setState(() => _error =
+              data['message'] ?? "Belum ada riwayat chat untuk dinilai.");
         }
       } else {
         setState(() => _error = "Gagal memuat riwayat chat.");

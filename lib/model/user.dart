@@ -17,8 +17,7 @@ class Student {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-
-  Student ({
+  Student({
     required this.id,
     required this.username,
     required this.password,
@@ -70,10 +69,13 @@ class Student {
       points: json['points'] != null ? safeInt(json['points']) : null,
       elo: json['elo'] != null ? safeInt(json['elo']) : null,
       eloTitle: json['eloTitle']?.toString(),
-      totalCourses: json['totalCourses'] != null ? safeInt(json['totalCourses']) : null,
+      totalCourses:
+          json['totalCourses'] != null ? safeInt(json['totalCourses']) : null,
       badges: json['badges'] != null ? safeInt(json['badges']) : null,
       instructorId: json['instructorId']?.toString(),
-      instructorCourses: json['instructorCourses'] != null ? safeInt(json['instructorCourses']) : null,
+      instructorCourses: json['instructorCourses'] != null
+          ? safeInt(json['instructorCourses'])
+          : null,
       image: json['image']?.toString(),
       rank: json['rank'] != null ? safeInt(json['rank']) : null,
       createdAt: safeDate(json['createdAt']),

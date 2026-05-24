@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 class ChapterStatus {
@@ -22,27 +21,26 @@ class ChapterStatus {
   DateTime createdAt;
   DateTime updatedAt;
 
-  ChapterStatus({
-    required this.id,
-    required this.userId,
-    required this.chapterId,
-    required this.isCompleted,
-    required this.isStarted,
-    required this.materialDone,
-    required this.assessmentDone,
-    required this.assignmentDone,
-    required this.assessmentAnswer,
-    required this.assessmentGrade,
-    required this.assessmentEloDelta,
-    this.assessmentPointsEarned = 0,
-    this.submission,
-    required this.timeStarted,
-    required this.timeFinished,
-    required this.assignmentScore,
-    required this.assignmentFeedback,
-    required this.createdAt,
-    required this.updatedAt
-  });
+  ChapterStatus(
+      {required this.id,
+      required this.userId,
+      required this.chapterId,
+      required this.isCompleted,
+      required this.isStarted,
+      required this.materialDone,
+      required this.assessmentDone,
+      required this.assignmentDone,
+      required this.assessmentAnswer,
+      required this.assessmentGrade,
+      required this.assessmentEloDelta,
+      this.assessmentPointsEarned = 0,
+      this.submission,
+      required this.timeStarted,
+      required this.timeFinished,
+      required this.assignmentScore,
+      required this.assignmentFeedback,
+      required this.createdAt,
+      required this.updatedAt});
 
   factory ChapterStatus.fromJson(Map<String, dynamic> json) {
     int safeInt(dynamic v, [int fallback = 0]) {
@@ -78,12 +76,16 @@ class ChapterStatus {
       assessmentEloDelta: safeInt(json['assessmentEloDelta']),
       assessmentPointsEarned: safeInt(json['assessmentPointsEarned']),
       submission: json['submission']?.toString(),
-      timeStarted: DateTime.parse(json['timeStarted'] ?? DateTime.now().toIso8601String()),
-      timeFinished: DateTime.parse(json['timeFinished'] ?? DateTime.now().toIso8601String()),
+      timeStarted: DateTime.parse(
+          json['timeStarted'] ?? DateTime.now().toIso8601String()),
+      timeFinished: DateTime.parse(
+          json['timeFinished'] ?? DateTime.now().toIso8601String()),
       assignmentScore: safeInt(json['assignmentScore']),
       assignmentFeedback: json['assignmentFeedback']?.toString() ?? '',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt:
+          DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt:
+          DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 

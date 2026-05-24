@@ -11,10 +11,9 @@ class CustomNavigationPainter extends CustomPainter {
     final itemWidth = size.width / 5;
     final selectedItemCenter = itemWidth * (selectedIndex + 0.5);
 
-    final backgroundPaint = Paint()
-      ..color = primaryColor.withOpacity(0.2);
-    canvas.drawCircle(Offset(selectedItemCenter, size.height / 2), 30,
-        backgroundPaint);
+    final backgroundPaint = Paint()..color = primaryColor.withOpacity(0.2);
+    canvas.drawCircle(
+        Offset(selectedItemCenter, size.height / 2), 30, backgroundPaint);
 
     final linePaint = Paint()
       ..color = primaryColor

@@ -14,7 +14,8 @@ import 'mycourse_screen.dart';
 
 Color purple = Color(0xFF441F7F);
 Color backgroundNavHex = Color(0xFFF3EDF7);
-const url = 'https://www.globalcareercounsellor.com/blog/wp-content/uploads/2018/05/Online-Career-Counselling-course.jpg';
+const url =
+    'https://www.globalcareercounsellor.com/blog/wp-content/uploads/2018/05/Online-Career-Counselling-course.jpg';
 
 class Mainscreen extends StatefulWidget {
   final int navIndex;
@@ -98,7 +99,8 @@ class _MainState extends State<Mainscreen> {
     pref = await SharedPreferences.getInstance();
     if (!mounted) return;
 
-    _apiErrorSubscription = ApiCacheService.errorController.stream.listen(_handleApiError);
+    _apiErrorSubscription =
+        ApiCacheService.errorController.stream.listen(_handleApiError);
 
     getCourseDetail();
     _maybeStartMainTutorial();
@@ -107,10 +109,11 @@ class _MainState extends State<Mainscreen> {
 
   void _handleApiError(String message) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
+        content: Text(message,
+            style: const TextStyle(fontFamily: 'DIN_Next_Rounded')),
         backgroundColor: Colors.redAccent,
         duration: const Duration(seconds: 5),
       ),
@@ -125,12 +128,13 @@ class _MainState extends State<Mainscreen> {
   Future<void> _startHeartbeat() async {
     final sessionId = pref.getInt('sessionId');
     final token = pref.getString('token');
-    
+
     if (sessionId == null || token == null) return;
 
     await _sendHeartbeat(sessionId, token);
 
-    _heartbeatTimer = Timer.periodic(const Duration(minutes: 10), (timer) async {
+    _heartbeatTimer =
+        Timer.periodic(const Duration(minutes: 10), (timer) async {
       await _sendHeartbeat(sessionId, token);
     });
   }
@@ -141,7 +145,7 @@ class _MainState extends State<Mainscreen> {
         Uri.parse('${GlobalVar.baseUrl}/evaluation/session/heartbeat'),
         body: {'sessionId': sessionId},
       );
-      
+
       if (response.statusCode != 204) {
         print('Heartbeat failed with status: ${response.statusCode}');
       }
@@ -174,7 +178,8 @@ class _MainState extends State<Mainscreen> {
   }
 
   Future<void> _maybeStartMainTutorial() async {
-    final hasSeenTutorial = pref.getBool(_mainTutorialKeyForCurrentUser()) ?? false;
+    final hasSeenTutorial =
+        pref.getBool(_mainTutorialKeyForCurrentUser()) ?? false;
     if (hasSeenTutorial || !mounted) {
       return;
     }
@@ -276,7 +281,8 @@ class _MainState extends State<Mainscreen> {
           );
         },
         transitionBuilder: (context, animation, secondaryAnimation, child) {
-          final curve = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+          final curve =
+              CurvedAnimation(parent: animation, curve: Curves.easeOut);
           return FadeTransition(
             opacity: curve,
             child: SlideTransition(
@@ -305,7 +311,6 @@ class _MainState extends State<Mainscreen> {
       navIndex = _tutorialSteps[stepIndex].navIndex;
     });
   }
-
 
   void updateIndex(int index) {
     if (_isTutorialActive) {
@@ -345,7 +350,8 @@ class _MainState extends State<Mainscreen> {
       case 1:
         return MycourseScreen();
       case 2:
-        return CourseDetailScreen(id: idCourse, refreshNonce: _courseRefreshNonce);
+        return CourseDetailScreen(
+            id: idCourse, refreshNonce: _courseRefreshNonce);
       case 3:
         return FriendsScreen();
       case 4:
@@ -537,13 +543,9 @@ class _MainState extends State<Mainscreen> {
           onTap: _onNavTapped,
           currentIndex: navIndex,
           selectedLabelStyle: TextStyle(
-              fontFamily:
-              'DIN_Next_Rounded',
-              fontWeight: FontWeight.bold
-          ),
+              fontFamily: 'DIN_Next_Rounded', fontWeight: FontWeight.bold),
           unselectedLabelStyle: TextStyle(
-            fontFamily:
-            'DIN_Next_Rounded',
+            fontFamily: 'DIN_Next_Rounded',
           ),
           items: const [
             BottomNavigationBarItem(
@@ -553,28 +555,22 @@ class _MainState extends State<Mainscreen> {
             BottomNavigationBarItem(
                 icon: Icon(LineAwesomeIcons.search_solid),
                 label: 'Search',
-                backgroundColor: Colors.black
-            ),
+                backgroundColor: Colors.black),
             BottomNavigationBarItem(
                 icon: Icon(LineAwesomeIcons.project_diagram_solid),
                 label: 'Course',
-                backgroundColor: Colors.black
-            ),
+                backgroundColor: Colors.black),
             BottomNavigationBarItem(
                 icon: Icon(LineAwesomeIcons.user_friends_solid),
                 label: 'Friends',
-                backgroundColor: Colors.black
-            ),
+                backgroundColor: Colors.black),
             BottomNavigationBarItem(
                 icon: Icon(LineAwesomeIcons.person_booth_solid),
                 label: 'Profile',
-                backgroundColor: Colors.black
-            )
-          ]
-      ),
+                backgroundColor: Colors.black)
+          ]),
     );
   }
-
 }
 
 class _TutorialStep {

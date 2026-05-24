@@ -97,10 +97,11 @@ class _ProfileState extends State<ProfileScreen> {
     }
 
     if (widget.isActive && !oldWidget.isActive) {
-      // Refresh data when user switches to Profile tab
       getUserData();
       _maybeStartEloSubTutorial();
-    } else if (widget.isActive && oldWidget.isMainTutorialActive && !widget.isMainTutorialActive) {
+    } else if (widget.isActive &&
+        oldWidget.isMainTutorialActive &&
+        !widget.isMainTutorialActive) {
       _maybeStartEloSubTutorial();
     }
   }
@@ -141,7 +142,6 @@ class _ProfileState extends State<ProfileScreen> {
       await _prepareProfileEloTutorial();
       _maybeStartEloSubTutorial();
     } catch (e) {
-      // Keep profile screen responsive when network/data fetch fails.
       debugPrint('Failed to load profile data: $e');
     } finally {
       if (mounted) {
@@ -165,7 +165,7 @@ class _ProfileState extends State<ProfileScreen> {
       list = sortUserByElo(studentRole(result));
     });
     for (int i = 0; i < list.length; i++) {
-      if(list[i].id == user?.id){
+      if (list[i].id == user?.id) {
         setState(() {
           rank = i + 1;
         });
@@ -199,13 +199,13 @@ class _ProfileState extends State<ProfileScreen> {
   }
 
   Future<void> _prepareProfileEloTutorial() async {
-    final tutorialDone = prefs.getBool(_profileEloTutorialKeyForCurrentUser()) ?? false;
+    final tutorialDone =
+        prefs.getBool(_profileEloTutorialKeyForCurrentUser()) ?? false;
     if (!mounted) return;
 
     setState(() {
       _isEloSubTutorialDone = tutorialDone;
     });
-
   }
 
   void _maybeStartEloSubTutorial() {
@@ -273,7 +273,6 @@ class _ProfileState extends State<ProfileScreen> {
     await AuthService.logout();
   }
 
-  /// Navigasi setelah logout: selalu ke login.
   void _navigateAfterLogout() {
     if (!context.mounted) return;
     Navigator.pushReplacement(
@@ -288,12 +287,10 @@ class _ProfileState extends State<ProfileScreen> {
 
     if (isLoading) {
       return Scaffold(
-      body: Container(
+          body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage(
-                'lib/assets/pictures/background-pattern.png'
-            ),
+            image: AssetImage('lib/assets/pictures/background-pattern.png'),
             fit: BoxFit.cover,
           ),
         ),
@@ -307,14 +304,14 @@ class _ProfileState extends State<ProfileScreen> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 10),
-                  Text("Mohon Tunggu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    "Mohon Tunggu",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
-            )
-        ),
-      )
-    );
+            )),
+      ));
     }
 
     if (currentUser == null) {
@@ -337,8 +334,8 @@ class _ProfileState extends State<ProfileScreen> {
               'Data profil tidak tersedia. Silakan login ulang.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFamily: 'DIN_Next_Rounded',
-              ),
+                    fontFamily: 'DIN_Next_Rounded',
+                  ),
             ),
           ),
         ),
@@ -346,394 +343,474 @@ class _ProfileState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: GlobalVar.primaryColor,
-        automaticallyImplyLeading: false,
-        title: Text(
-            "Profile",
-            style: TextStyle(
-                fontFamily: 'DIN_Next_Rounded',
-                color: Colors.white
-            )),
-      ),
-      body:  Stack(
-        children: [
+        appBar: AppBar(
+          backgroundColor: GlobalVar.primaryColor,
+          automaticallyImplyLeading: false,
+          title: Text("Profile",
+              style: TextStyle(
+                  fontFamily: 'DIN_Next_Rounded', color: Colors.white)),
+        ),
+        body: Stack(children: [
           Container(
             decoration: BoxDecoration(
                 image: DecorationImage(
                     image: AssetImage(
                         'lib/assets/pictures/background-pattern.png'),
-                    fit: BoxFit.cover
-                )
-            ),
+                    fit: BoxFit.cover)),
           ),
-          isLoading 
-          ? Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                      'lib/assets/pictures/background-pattern.png'
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: SizedBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 10),
-                        Text("Mohon Tunggu", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  )
-              ),
-            )
-          ) 
-          : Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Stack(
-              key: _tutorialOverlayStackKey,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
+          isLoading
+              ? Scaffold(
+                  backgroundColor: Colors.transparent,
+                  body: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
                         image: AssetImage(
                             'lib/assets/pictures/background-pattern.png'),
-                        fit: BoxFit.cover
-                    )
-                  ),
-                ),
-                SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    children: [
-                      Container(
-                        color: GlobalVar.primaryColor,
-                        child: Column(
-                          children: [
-                            Stack(
-                              children: [
-                                Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(0.1),
-                                  ),
-                                  child: ClipOval(
-                                    child: currentUser.image != "" && currentUser.image != null ? Image.network(
-                                      currentUser.image!,
-                                      fit: BoxFit.cover,
-                                      width: 120,
-                                      height: 120,
-                                      loadingBuilder: (context, child, loadingProgress) {
-                                        if (loadingProgress == null) return child;
-                                        return const Center(child: CircularProgressIndicator());
-                                      },
-                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 100, color: Colors.white),
-                                    )
-                                        : const Icon(Icons.person, size: 100, color: Colors.white,),
-                                  ),
-                                ),
-                              Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => UpdateProfile(user: currentUser)),
-                                      );
-                                    },
-                                    child: Container(
-                                      width: 35,
-                                      height: 35,
-                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(100), color: GlobalVar.secondaryColor),
-                                      child: const Icon(
-                                        LineAwesomeIcons.pencil_alt_solid,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  )
-                              )
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: SizedBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 10),
+                              Text(
+                                "Mohon Tunggu",
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 10),
-                            Text(currentUser.name,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontFamily: 'DIN_Next_Rounded',
-                                  color: Colors.white
-                              )),
-                            Text(currentUser.studentId ?? '',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontFamily: 'DIN_Next_Rounded',
-                                  color: GlobalVar.accentColor
-                              )),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.amber,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              currentUser.eloTitle ?? 'Beginner',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontFamily: 'DIN_Next_Rounded',
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            margin: EdgeInsets.symmetric(horizontal: 32),
-                            padding: EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Center(
-                                        child: _buildInfoColumn(
-                                          LineAwesomeIcons.medal_solid,
-                                          'Lencana',
-                                          '${userBadges?.length}',
-                                          GlobalVar.secondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Center(
-                                        child: _buildInfoColumn(
-                                          LineAwesomeIcons.user_check_solid,
-                                          'Course',
-                                          '${allCourses != null ? allCourses?.length : '0'}',
-                                          GlobalVar.secondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Center(
-                                        child: _buildInfoColumn(
-                                          LineAwesomeIcons.trophy_solid,
-                                          'Peringkat',
-                                          '$rank / ${list.length}',
-                                          GlobalVar.secondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(child: SizedBox()),
-                                    Expanded(
-                                      child: Center(
-                                        child: _buildInfoColumn(
-                                          LineAwesomeIcons.gem_solid,
-                                          'Poin',
-                                          '${currentUser.points ?? 0}',
-                                          GlobalVar.secondaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Center(
-                                        child: _buildEloMetricWithHighlight(currentUser),
-                                      ),
-                                    ),
-                                    Expanded(child: SizedBox()),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-                    ),
-                      SizedBox(
-                      height: 4,
-                    ),
+                        )),
+                  ))
+              : Scaffold(
+                  backgroundColor: Colors.transparent,
+                  body: Stack(
+                    key: _tutorialOverlayStackKey,
+                    children: [
                       Container(
-                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                        decoration: BoxDecoration(
+                            image: DecorationImage(
+                                image: AssetImage(
+                                    'lib/assets/pictures/background-pattern.png'),
+                                fit: BoxFit.cover)),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 8,
-                          ),
-                          Text(
-                            'Lencana Saya',
-                            textAlign: TextAlign.start,
-                            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                              fontWeight: FontWeight.bold,
+                      SingleChildScrollView(
+                        controller: _scrollController,
+                        child: Column(
+                          children: [
+                            Container(
                               color: GlobalVar.primaryColor,
-                              fontFamily: 'DIN_Next_Rounded',
-                            ),
-                          ),
-                          SizedBox(
-                            height: 8,
-                          ),
-                          SizedBox(
-                            height: 64,
-                            child: userBadges!.isNotEmpty ? ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: userBadges?.length,
-                              itemBuilder: (context, index) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    _showBadgeDetails(context, userBadges![index].badge);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: userBadges?[index].badge.image != null && userBadges?[index].badge.image != '' ?
-                                      Image.network(
-                                        userBadges![index].badge.image!,
-                                        fit: BoxFit.cover,
-                                        loadingBuilder: (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
-                                          return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
-                                        },
-                                        errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover),
-                                      ) : Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover)
+                              child: Column(
+                                children: [
+                                  Stack(
+                                    children: [
+                                      Container(
+                                        width: 120,
+                                        height: 120,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white.withOpacity(0.1),
+                                        ),
+                                        child: ClipOval(
+                                          child: currentUser.image != "" &&
+                                                  currentUser.image != null
+                                              ? Image.network(
+                                                  currentUser.image!,
+                                                  fit: BoxFit.cover,
+                                                  width: 120,
+                                                  height: 120,
+                                                  loadingBuilder: (context,
+                                                      child, loadingProgress) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return const Center(
+                                                        child:
+                                                            CircularProgressIndicator());
+                                                  },
+                                                  errorBuilder: (context, error,
+                                                          stackTrace) =>
+                                                      const Icon(Icons.person,
+                                                          size: 100,
+                                                          color: Colors.white),
+                                                )
+                                              : const Icon(
+                                                  Icons.person,
+                                                  size: 100,
+                                                  color: Colors.white,
+                                                ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        UpdateProfile(
+                                                            user: currentUser)),
+                                              );
+                                            },
+                                            child: Container(
+                                              width: 35,
+                                              height: 35,
+                                              decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          100),
+                                                  color:
+                                                      GlobalVar.secondaryColor),
+                                              child: const Icon(
+                                                LineAwesomeIcons
+                                                    .pencil_alt_solid,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ))
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(currentUser.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(
+                                              fontFamily: 'DIN_Next_Rounded',
+                                              color: Colors.white)),
+                                  Text(currentUser.studentId ?? '',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                              fontFamily: 'DIN_Next_Rounded',
+                                              color: GlobalVar.accentColor)),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      currentUser.eloTitle ?? 'Beginner',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            fontFamily: 'DIN_Next_Rounded',
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                                   ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    margin:
+                                        EdgeInsets.symmetric(horizontal: 32),
+                                    padding: EdgeInsets.all(8.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Center(
+                                                child: _buildInfoColumn(
+                                                  LineAwesomeIcons.medal_solid,
+                                                  'Lencana',
+                                                  '${userBadges?.length}',
+                                                  GlobalVar.secondaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Center(
+                                                child: _buildInfoColumn(
+                                                  LineAwesomeIcons
+                                                      .user_check_solid,
+                                                  'Course',
+                                                  '${allCourses != null ? allCourses?.length : '0'}',
+                                                  GlobalVar.secondaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Center(
+                                                child: _buildInfoColumn(
+                                                  LineAwesomeIcons.trophy_solid,
+                                                  'Peringkat',
+                                                  '$rank / ${list.length}',
+                                                  GlobalVar.secondaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Expanded(child: SizedBox()),
+                                            Expanded(
+                                              child: Center(
+                                                child: _buildInfoColumn(
+                                                  LineAwesomeIcons.gem_solid,
+                                                  'Poin',
+                                                  '${currentUser.points ?? 0}',
+                                                  GlobalVar.secondaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Center(
+                                                child:
+                                                    _buildEloMetricWithHighlight(
+                                                        currentUser),
+                                              ),
+                                            ),
+                                            Expanded(child: SizedBox()),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              height: 4,
+                            ),
+                            Container(
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.3),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 8),
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: 8,
+                                  ),
+                                  Text(
+                                    'Lencana Saya',
+                                    textAlign: TextAlign.start,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium!
+                                        .copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: GlobalVar.primaryColor,
+                                          fontFamily: 'DIN_Next_Rounded',
+                                        ),
+                                  ),
+                                  SizedBox(
+                                    height: 8,
+                                  ),
+                                  SizedBox(
+                                      height: 64,
+                                      child: userBadges!.isNotEmpty
+                                          ? ListView.builder(
+                                              scrollDirection: Axis.horizontal,
+                                              itemCount: userBadges?.length,
+                                              itemBuilder: (context, index) {
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    _showBadgeDetails(
+                                                        context,
+                                                        userBadges![index]
+                                                            .badge);
+                                                  },
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8.0),
+                                                    child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                        child: userBadges?[index]
+                                                                        .badge
+                                                                        .image !=
+                                                                    null &&
+                                                                userBadges?[index]
+                                                                        .badge
+                                                                        .image !=
+                                                                    ''
+                                                            ? Image.network(
+                                                                userBadges![
+                                                                        index]
+                                                                    .badge
+                                                                    .image!,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                loadingBuilder:
+                                                                    (context,
+                                                                        child,
+                                                                        loadingProgress) {
+                                                                  if (loadingProgress ==
+                                                                      null)
+                                                                    return child;
+                                                                  return const Center(
+                                                                      child:
+                                                                          CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2,
+                                                                  ));
+                                                                },
+                                                                errorBuilder: (context,
+                                                                        error,
+                                                                        stackTrace) =>
+                                                                    Image.asset(
+                                                                        'lib/assets/pictures/icon.png',
+                                                                        fit: BoxFit
+                                                                            .cover),
+                                                              )
+                                                            : Image.asset(
+                                                                'lib/assets/pictures/icon.png',
+                                                                fit: BoxFit
+                                                                    .cover)),
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                'Kamu belum mempunyai badge',
+                                                style: TextStyle(
+                                                    fontFamily:
+                                                        'DIN_Next_Rounded'),
+                                              ),
+                                            )),
+                                  SizedBox(
+                                    height: 8,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ProfileMenuWidget(
+                              title: "Trades",
+                              icon: LineAwesomeIcons.coins_solid,
+                              onPress: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          TradeScreen(user: currentUser)),
                                 );
                               },
-                            ) : Center(
-                              child: Text('Kamu belum mempunyai badge', style: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
-                            )
-                          ),
-                          SizedBox(
-                            height: 8,
-                          ),
-                        ],
-                      ),
-                    ),
-                      ProfileMenuWidget(
-                        title: "Trades",
-                        icon: LineAwesomeIcons.coins_solid,
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => TradeScreen(user: currentUser)),
-                          );
-                        },
-                      ),
-                      ProfileMenuWidget(
-                        title: "Update Profile",
-                        icon: LineAwesomeIcons.person_booth_solid,
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => UpdateProfile(user: currentUser)),
-                          );
-                        },
-                      ),
-                      ProfileMenuWidget(
-                        title: "Quick Access",
-                        icon: LineAwesomeIcons.accessible,
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => QuickAccessScreen()),
-                          );
-                        },
-                      ),
-                      ProfileMenuWidget(
-                        title: "App Rating",
-                        icon: LineAwesomeIcons.star,
-                        onPress: () {},
-                      ),
-                      ProfileMenuWidget(
-                        title: "About App",
-                        icon: LineAwesomeIcons.info_circle_solid,
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => AboutAppScreen()),
-                          );
-                        },
-                      ),
-                      SizedBox(
-                          height: 16
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                              onPressed: () async {
-                                await logout();
-                                _navigateAfterLogout();
+                            ),
+                            ProfileMenuWidget(
+                              title: "Update Profile",
+                              icon: LineAwesomeIcons.person_booth_solid,
+                              onPress: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          UpdateProfile(user: currentUser)),
+                                );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: GlobalVar.primaryColor,
-                                side: BorderSide.none,
-                                shape: const StadiumBorder(),
+                            ),
+                            ProfileMenuWidget(
+                              title: "Quick Access",
+                              icon: LineAwesomeIcons.accessible,
+                              onPress: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          QuickAccessScreen()),
+                                );
+                              },
+                            ),
+                            ProfileMenuWidget(
+                              title: "App Rating",
+                              icon: LineAwesomeIcons.star,
+                              onPress: () {},
+                            ),
+                            ProfileMenuWidget(
+                              title: "About App",
+                              icon: LineAwesomeIcons.info_circle_solid,
+                              onPress: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => AboutAppScreen()),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 16),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                    onPressed: () async {
+                                      await logout();
+                                      _navigateAfterLogout();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: GlobalVar.primaryColor,
+                                      side: BorderSide.none,
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: Text(
+                                      "Log Out",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium!
+                                          .copyWith(
+                                              fontFamily: 'DIN_Next_Rounded',
+                                              color: Colors.white),
+                                    )),
                               ),
-                              child: Text("Log Out", style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                  fontFamily: 'DIN_Next_Rounded',
-                                  color: Colors.white
-                              ),)
-                          ),
+                            ),
+                            SizedBox(height: 16),
+                          ],
                         ),
                       ),
-                      SizedBox(
-                          height: 16
-                      ),
+                      if (_isEloSubTutorialActive) ...[
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: CustomPaint(
+                              painter: _SpotlightScrimPainter(
+                                focusRect: _getEloFocusRect(),
+                                scrimColor: Colors.black.withOpacity(0.12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _buildEloFloatingTutorialDialog(),
+                      ],
                     ],
                   ),
                 ),
-                if (_isEloSubTutorialActive) ...[
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _SpotlightScrimPainter(
-                          focusRect: _getEloFocusRect(),
-                          scrimColor: Colors.black.withOpacity(0.12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  _buildEloFloatingTutorialDialog(),
-                ],
-              ],
-            ),
-          ),
-        ]
-      )
-    );
+        ]));
   }
 
   Rect? _getEloFocusRect() {
@@ -752,7 +829,8 @@ class _ProfileState extends State<ProfileScreen> {
     return rect;
   }
 
-  String _buildBadgeDescription(BadgeModel badge, Course course, Chapter chapter) {
+  String _buildBadgeDescription(
+      BadgeModel badge, Course course, Chapter chapter) {
     final normalizedName = badge.name.trim().toLowerCase();
 
     switch (normalizedName) {
@@ -791,16 +869,21 @@ class _ProfileState extends State<ProfileScreen> {
                 SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: badge.image != null  ?
-                  Image.network(
-                    badge.image!,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover),
-                  ) : Image.asset('lib/assets/pictures/icon.png', fit: BoxFit.cover),
+                  child: badge.image != null
+                      ? Image.network(
+                          badge.image!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset('lib/assets/pictures/icon.png',
+                                  fit: BoxFit.cover),
+                        )
+                      : Image.asset('lib/assets/pictures/icon.png',
+                          fit: BoxFit.cover),
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -825,14 +908,14 @@ class _ProfileState extends State<ProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor
-                  ),
+                      backgroundColor: AppColors.primaryColor),
                   onPressed: () {
                     Navigator.pop(context);
                   },
                   child: Text(
                     'Tutup',
-                    style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white),
+                    style: TextStyle(
+                        fontFamily: 'DIN_Next_Rounded', color: Colors.white),
                   ),
                 ),
               ),
@@ -885,7 +968,8 @@ class _ProfileState extends State<ProfileScreen> {
       child: Material(
         color: Colors.transparent,
         child: Container(
-          padding: EdgeInsets.fromLTRB(14, isSecondStep ? 10 : 12, 14, isSecondStep ? 10 : 12),
+          padding: EdgeInsets.fromLTRB(
+              14, isSecondStep ? 10 : 12, 14, isSecondStep ? 10 : 12),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
@@ -984,20 +1068,21 @@ class _ProfileState extends State<ProfileScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-
         SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 28,),
+            Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
             Text(
               label,
               style: Theme.of(context).textTheme.labelMedium!.copyWith(
-                // fontWeight: FontWeight.bold,
-                color: Colors.black,
-                fontFamily:
-                'DIN_Next_Rounded',
-              ),
+                    color: Colors.black,
+                    fontFamily: 'DIN_Next_Rounded',
+                  ),
             ),
             Text(value,
                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
@@ -1052,14 +1137,13 @@ class _SpotlightScrimPainter extends CustomPainter {
 }
 
 class ProfileMenuWidget extends StatelessWidget {
-  const ProfileMenuWidget({
-    super.key,
-    required this.title,
-    required this.icon,
-    required this.onPress,
-    this.endIcon = true,
-    this.textColor
-  });
+  const ProfileMenuWidget(
+      {super.key,
+      required this.title,
+      required this.icon,
+      required this.onPress,
+      this.endIcon = true,
+      this.textColor});
 
   final String title;
   final IconData icon;
@@ -1069,7 +1153,6 @@ class ProfileMenuWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
@@ -1083,24 +1166,22 @@ class ProfileMenuWidget extends StatelessWidget {
             ),
             child: Icon(icon, color: Colors.white),
           ),
-          title: Text(title, style: Theme
-              .of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(
-            color: textColor,
-            fontFamily: 'DIN_Next_Rounded',
-          )),
-          trailing: endIcon ? Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-                color: Colors.grey.withOpacity(0.1),
-              ),
-              child: const Icon(LineAwesomeIcons.angle_right_solid, size: 18.0,
-                  color: Colors.grey)) : null
-      ),
+          title: Text(title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: textColor,
+                    fontFamily: 'DIN_Next_Rounded',
+                  )),
+          trailing: endIcon
+              ? Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    color: Colors.grey.withOpacity(0.1),
+                  ),
+                  child: const Icon(LineAwesomeIcons.angle_right_solid,
+                      size: 18.0, color: Colors.grey))
+              : null),
     );
   }
 }

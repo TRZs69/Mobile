@@ -7,7 +7,8 @@ class CongratulationsScreen extends StatefulWidget {
   final String message;
   final VoidCallback? onContinue;
 
-  const CongratulationsScreen({super.key, required this.message, this.onContinue});
+  const CongratulationsScreen(
+      {super.key, required this.message, this.onContinue});
 
   @override
   _CongratulationsScreenState createState() => _CongratulationsScreenState();
@@ -19,7 +20,8 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 10));
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 10));
     _confettiController.play();
   }
 
@@ -47,24 +49,32 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
                   Text(
                     "Congratulations!",
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                         color: AppColors.primaryColor,
-                      fontFamily: 'DIN_Next_Rounded'
-                    ),
+                        fontFamily: 'DIN_Next_Rounded'),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     widget.message,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.black54, fontFamily: 'DIN_Next_Rounded'),
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black54,
+                        fontFamily: 'DIN_Next_Rounded'),
                   ),
                   const SizedBox(height: 30),
                   if (widget.onContinue != null)
                     ElevatedButton(
                       onPressed: widget.onContinue,
-                      style: ButtonStyle(backgroundColor: WidgetStateProperty.all<Color>(AppColors.primaryColor)),
-                      child: Text("Ayo Lanjutkan ke Level Berikutnya", style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'DIN_Next_Rounded')),
+                      style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.all<Color>(
+                              AppColors.primaryColor)),
+                      child: Text("Ayo Lanjutkan ke Level Berikutnya",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontFamily: 'DIN_Next_Rounded')),
                     ),
                 ],
               ),
@@ -75,7 +85,14 @@ class _CongratulationsScreenState extends State<CongratulationsScreen> {
             blastDirectionality: BlastDirectionality.explosive,
             numberOfParticles: 25,
             shouldLoop: true,
-            colors: [AppColors.primaryColor, AppColors.secondaryColor, AppColors.accentColor, Colors.blue, Colors.green, Colors.purple],
+            colors: [
+              AppColors.primaryColor,
+              AppColors.secondaryColor,
+              AppColors.accentColor,
+              Colors.blue,
+              Colors.green,
+              Colors.purple
+            ],
           ),
         ],
       ),

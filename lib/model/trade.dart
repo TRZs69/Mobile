@@ -26,7 +26,6 @@ class TradeModel {
         description: json['description'],
         requiredBadgeType: json['requiredBadgeType'],
         createdAt: DateTime.parse(json['createdAt']),
-        updatedAt: DateTime.parse(json['updatedAt'])
-    );
+        updatedAt: DateTime.parse(json['updatedAt']));
   }
 }

@@ -15,14 +15,13 @@ class MaterialScreen extends StatefulWidget {
   final int level;
   final Function(bool) updateProgress;
   final Function(ChapterStatus) updateStatus;
-  const MaterialScreen({
-    super.key,
-    required this.status,
-    required this.chapterName,
-    required this.level,
-    required this.updateProgress,
-    required this.updateStatus
-  });
+  const MaterialScreen(
+      {super.key,
+      required this.status,
+      required this.chapterName,
+      required this.level,
+      required this.updateProgress,
+      required this.updateStatus});
 
   @override
   State<MaterialScreen> createState() => _MaterialScreenState();
@@ -45,7 +44,6 @@ class _MaterialScreenState extends State<MaterialScreen> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(updateProgressMaterial);
-
   }
 
   void getMaterial(int id) async {
@@ -74,7 +72,8 @@ class _MaterialScreenState extends State<MaterialScreen> {
   }
 
   updateProgressMaterial() {
-    double currentProgressValue = _scrollController.offset / _scrollController.position.maxScrollExtent;
+    double currentProgressValue =
+        _scrollController.offset / _scrollController.position.maxScrollExtent;
 
     if (currentProgressValue < 0.0) {
       currentProgressValue = 0.0;
@@ -83,14 +82,19 @@ class _MaterialScreenState extends State<MaterialScreen> {
     }
 
     setState(() {
-      progressValue = currentProgressValue <= progressValue ? progressValue : currentProgressValue;
+      progressValue = currentProgressValue <= progressValue
+          ? progressValue
+          : currentProgressValue;
       if (progressValue >= 1.0 && !showDialogMaterialOnce) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          showCompletionDialog(context, "Yeay kamu berhasil menyelesaikan Materi, Ayo lanjutkan ke bagian Assessment", false, false);
+          showCompletionDialog(
+              context,
+              "Yeay kamu berhasil menyelesaikan Materi, Ayo lanjutkan ke bagian Assessment",
+              false,
+              false);
         });
         showDialogMaterialOnce = true;
-        
-        // Hanya panggil update status SATU KALI saat pertama kali mencapai bawah
+
         widget.updateProgress(true);
         status.materialDone = true;
         widget.updateStatus(status);
@@ -103,7 +107,8 @@ class _MaterialScreenState extends State<MaterialScreen> {
     status = await UserChapterService.updateChapterStatus(status.id, status);
   }
 
-  void showCompletionDialog(BuildContext context, String message, bool isAssessment, bool isAssignment) {
+  void showCompletionDialog(BuildContext context, String message,
+      bool isAssessment, bool isAssignment) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -112,14 +117,17 @@ class _MaterialScreenState extends State<MaterialScreen> {
           backgroundColor: Colors.white,
           title: Text(
             "Progress Completed!",
-            style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor),
+            style: TextStyle(
+                fontFamily: 'DIN_Next_Rounded', color: AppColors.primaryColor),
             textAlign: TextAlign.center,
           ),
           content: SingleChildScrollView(
             child: Column(
               children: [
                 Image.asset('lib/assets/pixels/check.png', height: 72),
-                SizedBox(height: 16,),
+                SizedBox(
+                  height: 16,
+                ),
                 Text(
                   message,
                   style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
@@ -133,14 +141,14 @@ class _MaterialScreenState extends State<MaterialScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor
-                ),
+                    backgroundColor: AppColors.primaryColor),
                 onPressed: () {
                   Navigator.pop(context);
                 },
                 child: Text(
                   "OK",
-                  style: TextStyle(fontFamily: 'DIN_Next_Rounded', color: Colors.white),
+                  style: TextStyle(
+                      fontFamily: 'DIN_Next_Rounded', color: Colors.white),
                 ),
               ),
             ),
@@ -156,127 +164,134 @@ class _MaterialScreenState extends State<MaterialScreen> {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-        if (isLoading)
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('lib/assets/pictures/background-pattern.png'),
-                fit: BoxFit.cover,
+          if (isLoading)
+            Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image:
+                      AssetImage('lib/assets/pictures/background-pattern.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-        if (!isLoading && material != null)
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('lib/assets/pictures/background-pattern.png'),
-                fit: BoxFit.cover,
+          if (!isLoading && material != null)
+            Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image:
+                      AssetImage('lib/assets/pictures/background-pattern.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  children: [
-                    SizedBox(height: 16),
-                    _buildHTMLContent(material!.content),
-                    SizedBox(height: 16), // Prevents layout overflow
-                  ],
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      SizedBox(height: 16),
+                      _buildHTMLContent(material!.content),
+                      SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-
-        if (!isLoading && material == null)
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('lib/assets/pictures/background-pattern.png'),
-                fit: BoxFit.cover,
+          if (!isLoading && material == null)
+            Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image:
+                      AssetImage('lib/assets/pictures/background-pattern.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('lib/assets/pixels/material-pixel.png',
+                          height: 50),
+                      SizedBox(height: 16),
+                      Text(
+                        "Materi belum tersedia",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.primaryColor,
+                          fontFamily: 'DIN_Next_Rounded',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "Untuk saat ini, materi untuk Level ${widget.chapterName} belum ada.",
+                        style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('lib/assets/pixels/material-pixel.png', height: 50),
-                    SizedBox(height: 16),
-                    Text(
-                      "Materi belum tersedia",
+        ],
+      ),
+      floatingActionButton: material != null
+          ? GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatbotScreen(
+                      startFresh: true,
+                      materialId: material!.id,
+                      chapterId: widget.status.chapterId,
+                      chapterLevel: widget.level,
+                    ),
+                  ),
+                );
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'lib/assets/vectors/levely_smile.svg',
+                    width: 56,
+                    height: 56,
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Tanya Levely',
                       style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.primaryColor,
+                        fontSize: 10,
+                        color: Colors.white,
                         fontFamily: 'DIN_Next_Rounded',
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      "Untuk saat ini, materi untuk Level ${widget.chapterName} belum ada.",
-                      style: TextStyle(fontFamily: 'DIN_Next_Rounded'),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ),
-      ],
-    ),
-    floatingActionButton: material != null
-        ? GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatbotScreen(
-                    startFresh: true,
-                    materialId: material!.id,
-                    chapterId: widget.status.chapterId,
-                    chapterLevel: widget.level,
-                  ),
-                ),
-              );
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  'lib/assets/vectors/levely_smile.svg',
-                  width: 56,
-                  height: 56,
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Tanya Levely',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontFamily: 'DIN_Next_Rounded',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
-        : null,
-  );
-}
+            )
+          : null,
+    );
+  }
 
   Widget _buildHTMLContent(String material) {
     return Padding(
-        padding: EdgeInsets.only(bottom: 30),
-            child: HtmlWidget(material, textStyle: TextStyle(fontFamily: 'DIN_Next_Rounded'),),
+      padding: EdgeInsets.only(bottom: 30),
+      child: HtmlWidget(
+        material,
+        textStyle: TextStyle(fontFamily: 'DIN_Next_Rounded'),
+      ),
     );
   }
 }

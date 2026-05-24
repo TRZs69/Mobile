@@ -7,10 +7,10 @@ class ChatMessage {
 
   ChatMessage({this.id, required String content, required this.isUser})
       : contentNotifier = ValueNotifier(content);
-      
+
   String get content => contentNotifier.value;
   set content(String val) => contentNotifier.value = val;
-  
+
   void dispose() {
     contentNotifier.dispose();
   }

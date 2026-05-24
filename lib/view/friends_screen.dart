@@ -7,7 +7,8 @@ import '../model/user.dart';
 
 Color purple = Color(0xFF441F7F);
 Color backgroundNavHex = Color(0xFFF3EDF7);
-const url = 'https://www.globalcareercounsellor.com/blog/wp-content/uploads/2018/05/Online-Career-Counselling-course.jpg';
+const url =
+    'https://www.globalcareercounsellor.com/blog/wp-content/uploads/2018/05/Online-Career-Counselling-course.jpg';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -17,7 +18,6 @@ class FriendsScreen extends StatefulWidget {
 }
 
 class _FriendsScreen extends State<FriendsScreen> {
-
   List<Student> user = [];
   bool isLoading = true;
 
@@ -60,86 +60,110 @@ class _FriendsScreen extends State<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     return Stack(
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.white, // Change this to your desired background color
+            color: Colors.white,
             image: DecorationImage(
-              image: AssetImage("lib/assets/learnbg.png"), // Background image
-              fit: BoxFit.cover,
-              opacity: 0.7
-            ),
+                image: AssetImage("lib/assets/learnbg.png"),
+                fit: BoxFit.cover,
+                opacity: 0.7),
           ),
         ),
-         !isLandscape ?
-           Scaffold(
-             backgroundColor: Colors.transparent,
-             appBar: AppBar(
-               toolbarHeight: 450,
-               backgroundColor: AppColors.primaryColor,
-               automaticallyImplyLeading: false,
-               shape: const RoundedRectangleBorder(
-                 borderRadius: BorderRadius.only(
-                   bottomLeft: Radius.circular(16),
-                   bottomRight: Radius.circular(16),
-                 ),
-               ),
-               title: Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 0),
-                 child: Column(
-                   mainAxisSize: MainAxisSize.min,
-                   children: [
-                     Text('Papan Peringkat', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 24, fontFamily: 'DIN_Next_Rounded'),),
-                     isLoading ? const SizedBox(height: 300, child: Center(child: CircularProgressIndicator(color: Colors.white))) : _buildLeaderBoard(user),
-                   ],
-                 ),
-               ),
-             ),
-             body: isLoading ? const Center(child: CircularProgressIndicator()) : _listFriends(),
-           ) :
-         Scaffold(
-           backgroundColor: Colors.transparent,
-           body: SingleChildScrollView(
-             child: Column(
-               children: [
-                 Container(
-                   height: 450,
-                   width: double.infinity,
-                   decoration: BoxDecoration(
-                     color: AppColors.primaryColor,
-                     borderRadius: BorderRadius.only(
-                       bottomLeft: Radius.circular(16),
-                       bottomRight: Radius.circular(16),
-                     ),
-                   ),
-                   child: SafeArea(
-                     child: Padding(
-                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                       child: Column(
-                         mainAxisAlignment: MainAxisAlignment.center,
-                         children: [
-                           Text(
-                             'Papan Peringkat',
-                             style: TextStyle(
-                                 fontWeight: FontWeight.bold,
-                                 color: Colors.white,
-                                 fontSize: 24,
-                                 fontFamily: 'DIN_Next_Rounded'
-                             ),
-                           ),
-                           isLoading ? const SizedBox(height: 300, child: Center(child: CircularProgressIndicator(color: Colors.white))) : _buildLeaderBoard(user),
-                         ],
-                       ),
-                     ),
-                   ),
-                 ),
-                 isLoading ? const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())) : _listFriendsForLandscape(),
-               ],
-             ),
-           ),
-         )
+        !isLandscape
+            ? Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: AppBar(
+                  toolbarHeight: 450,
+                  backgroundColor: AppColors.primaryColor,
+                  automaticallyImplyLeading: false,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                  ),
+                  title: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Papan Peringkat',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontFamily: 'DIN_Next_Rounded'),
+                        ),
+                        isLoading
+                            ? const SizedBox(
+                                height: 300,
+                                child: Center(
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white)))
+                            : _buildLeaderBoard(user),
+                      ],
+                    ),
+                  ),
+                ),
+                body: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _listFriends(),
+              )
+            : Scaffold(
+                backgroundColor: Colors.transparent,
+                body: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 450,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Papan Peringkat',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontFamily: 'DIN_Next_Rounded'),
+                                ),
+                                isLoading
+                                    ? const SizedBox(
+                                        height: 300,
+                                        child: Center(
+                                            child: CircularProgressIndicator(
+                                                color: Colors.white)))
+                                    : _buildLeaderBoard(user),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Center(child: CircularProgressIndicator()))
+                          : _listFriendsForLandscape(),
+                    ],
+                  ),
+                ),
+              )
       ],
     );
   }
@@ -151,7 +175,14 @@ class _FriendsScreen extends State<FriendsScreen> {
       child: ListView.builder(
         itemCount: sortedUsers.length,
         itemBuilder: (context, count) {
-          return _listFriendsItem(sortedUsers[count], count,  count == 0 ? 0 : count == sortedUsers.length - 1 ? 2 : 1);
+          return _listFriendsItem(
+              sortedUsers[count],
+              count,
+              count == 0
+                  ? 0
+                  : count == sortedUsers.length - 1
+                      ? 2
+                      : 1);
         },
       ),
     );
@@ -169,8 +200,11 @@ class _FriendsScreen extends State<FriendsScreen> {
           return _listFriendsItem(
               sortedUsers[count],
               count,
-              count == 0 ? 0 : count == sortedUsers.length - 1 ? 2 : 1
-          );
+              count == 0
+                  ? 0
+                  : count == sortedUsers.length - 1
+                      ? 2
+                      : 1);
         },
       ),
     );
@@ -178,7 +212,11 @@ class _FriendsScreen extends State<FriendsScreen> {
 
   Widget _listFriendsItem(Student user, int index, int position) {
     return Padding(
-      padding: position == 0 ? const EdgeInsets.only(top: 12) : position == 2 ? const EdgeInsets.only(bottom: 12) : const EdgeInsets.all(0),
+      padding: position == 0
+          ? const EdgeInsets.only(top: 12)
+          : position == 2
+              ? const EdgeInsets.only(bottom: 12)
+              : const EdgeInsets.all(0),
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(
@@ -187,12 +225,15 @@ class _FriendsScreen extends State<FriendsScreen> {
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [ (switch (index) {
-                0 => Colors.amber.shade300,
-                1 => Colors.blueGrey.shade400,
-                2 => Colors.orange.shade400,
-                _ => Colors.grey.shade300
-              }), Colors.transparent],
+              colors: [
+                (switch (index) {
+                  0 => Colors.amber.shade300,
+                  1 => Colors.blueGrey.shade400,
+                  2 => Colors.orange.shade400,
+                  _ => Colors.grey.shade300
+                }),
+                Colors.transparent
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               stops: [
@@ -203,34 +244,52 @@ class _FriendsScreen extends State<FriendsScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: ListTile(
-            leading: index <= 2 ? Image.asset(
-                switch (index) {
-                  0 => 'lib/assets/1st.png',
-                  1 => 'lib/assets/2nd.png',
-                  2 => 'lib/assets/3rd.png',
-                  _ => ''
-                }
-            ) : Text('#${index + 1}', style: TextStyle(fontSize: 25),),
+            leading: index <= 2
+                ? Image.asset(switch (index) {
+                    0 => 'lib/assets/1st.png',
+                    1 => 'lib/assets/2nd.png',
+                    2 => 'lib/assets/3rd.png',
+                    _ => ''
+                  })
+                : Text(
+                    '#${index + 1}',
+                    style: TextStyle(fontSize: 25),
+                  ),
             title: Text(
               user.name,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'DIN_Next_Rounded'),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  fontFamily: 'DIN_Next_Rounded'),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   user.studentId ?? '',
-                  style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'DIN_Next_Rounded'),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.black,
+                      fontFamily: 'DIN_Next_Rounded'),
                 ),
                 Text(
                   user.eloTitle ?? 'Beginner',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54, fontFamily: 'DIN_Next_Rounded'),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                      fontFamily: 'DIN_Next_Rounded'),
                 ),
               ],
             ),
             trailing: Text(
               '${user.elo ?? 0} ELO',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'DIN_Next_Rounded'),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  fontFamily: 'DIN_Next_Rounded'),
             ),
           ),
         ),
@@ -294,7 +353,8 @@ class _FriendsScreen extends State<FriendsScreen> {
                 onBackgroundImageError: (_, __) {},
                 child: const Icon(Icons.person, size: 20),
               )
-            : const CircleAvatar(radius: 30, child: Icon(Icons.person, size: 20)),
+            : const CircleAvatar(
+                radius: 30, child: Icon(Icons.person, size: 20)),
         const SizedBox(height: 8),
         Text(
           displayName,

@@ -28,12 +28,10 @@ class CourseService {
       final body = response.body;
       final result = jsonDecode(body);
       List<Course> courses = List<Course>.from(
-        result.map(
-              (result) => Course.fromJson(result)
-        ),
+        result.map((result) => Course.fromJson(result)),
       );
       return courses;
-    } catch(e){
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
@@ -68,17 +66,16 @@ class CourseService {
       final body = response.body;
       final result = jsonDecode(body);
       Course courses = Course(
-        id: result['id'],
-        courseName: result['name'],
-        codeCourse: result['code'],
-        description: result['description'],
-        image: result['image'],
-        createdAt: DateTime.parse(result['createdAt']),
-        updatedAt: DateTime.parse(result['updatedAt']),
-        progress: 0
-      );
+          id: result['id'],
+          courseName: result['name'],
+          codeCourse: result['code'],
+          description: result['description'],
+          image: result['image'],
+          createdAt: DateTime.parse(result['createdAt']),
+          updatedAt: DateTime.parse(result['updatedAt']),
+          progress: 0);
       return courses;
-    } catch(e){
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
@@ -104,11 +101,10 @@ class CourseService {
       );
       final body = response.body;
       final result = jsonDecode(body);
-      List<Chapter> chapter = List.from(
-        result.map((result) => Chapter.fromJson(result))
-      );
+      List<Chapter> chapter =
+          List.from(result.map((result) => Chapter.fromJson(result)));
       return chapter;
-    } catch(e){
+    } catch (e) {
       throw Exception(e.toString());
     }
   }
@@ -119,7 +115,8 @@ class CourseService {
     void Function(List<Chapter> freshData)? onRevalidated,
   }) async {
     try {
-      final uri = Uri.parse('${GlobalVar.baseUrl}/course/$courseId/chapters/user/$userId');
+      final uri = Uri.parse(
+          '${GlobalVar.baseUrl}/course/$courseId/chapters/user/$userId');
       final response = await ApiCacheService.getSWR(
         uri,
         onRevalidated: (freshResponse) {

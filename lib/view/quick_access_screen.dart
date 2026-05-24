@@ -13,7 +13,6 @@ class QuickAccessScreen extends StatefulWidget {
 }
 
 class _QuickAccessScreenState extends State<QuickAccessScreen> {
-
   late final List<QuickAccessItem> quickAccessItems;
 
   @override
@@ -50,7 +49,6 @@ class _QuickAccessScreenState extends State<QuickAccessScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,15 +56,15 @@ class _QuickAccessScreenState extends State<QuickAccessScreen> {
         title: Text("Quick Access"),
         backgroundColor: AppColors.primaryColor,
         leading: IconButton(
-            onPressed: (){
+            onPressed: () {
               Navigator.pop(context);
             },
-            icon: Icon(LineAwesomeIcons.angle_left_solid, color: Colors.white,)),
+            icon: Icon(
+              LineAwesomeIcons.angle_left_solid,
+              color: Colors.white,
+            )),
         titleTextStyle: TextStyle(
-            fontFamily: 'DIN_Next_Rounded',
-            fontSize: 24,
-            color: Colors.white
-        ),
+            fontFamily: 'DIN_Next_Rounded', fontSize: 24, color: Colors.white),
         iconTheme: IconThemeData(
           color: Colors.white,
         ),
@@ -74,9 +72,7 @@ class _QuickAccessScreenState extends State<QuickAccessScreen> {
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage(
-                'lib/assets/pictures/background-pattern.png'
-            ),
+            image: AssetImage('lib/assets/pictures/background-pattern.png'),
             fit: BoxFit.cover,
           ),
         ),
@@ -94,9 +90,13 @@ class _QuickAccessScreenState extends State<QuickAccessScreen> {
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ));
                   },
-                  errorBuilder: (context, error, stackTrace) => Image.asset('lib/assets/pictures/icon.png'),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Image.asset('lib/assets/pictures/icon.png'),
                 ),
               ),
               title: Text(

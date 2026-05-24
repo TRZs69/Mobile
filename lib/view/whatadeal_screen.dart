@@ -2,7 +2,6 @@ import 'package:app/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 
-
 class WhatADealScreen extends StatefulWidget {
   final String message;
 
@@ -18,7 +17,8 @@ class _WhatADealScreenState extends State<WhatADealScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 3));
     _confettiController.play();
   }
 
@@ -41,7 +41,8 @@ class _WhatADealScreenState extends State<WhatADealScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.celebration, color: AppColors.secondaryColor, size: 100),
+                  Icon(Icons.celebration,
+                      color: AppColors.secondaryColor, size: 100),
                   const SizedBox(height: 20),
                   Text(
                     "What a Deal!",
@@ -49,24 +50,32 @@ class _WhatADealScreenState extends State<WhatADealScreen> {
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryColor,
-                        fontFamily: 'DIN_Next_Rounded'
-                    ),
+                        fontFamily: 'DIN_Next_Rounded'),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     widget.message,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.black54, fontFamily: 'DIN_Next_Rounded'),
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black54,
+                        fontFamily: 'DIN_Next_Rounded'),
                   ),
                   const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                      },
-                      style: ButtonStyle(backgroundColor: WidgetStateProperty.all<Color>(AppColors.primaryColor)),
-                      child: Text("Ayo, dapatkan lebih banyak badge!", style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'DIN_Next_Rounded')),
-                    ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                    },
+                    style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all<Color>(
+                            AppColors.primaryColor)),
+                    child: Text("Ayo, dapatkan lebih banyak badge!",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontFamily: 'DIN_Next_Rounded')),
+                  ),
                 ],
               ),
             ),
@@ -76,7 +85,14 @@ class _WhatADealScreenState extends State<WhatADealScreen> {
             blastDirectionality: BlastDirectionality.explosive,
             numberOfParticles: 25,
             shouldLoop: true,
-            colors: [AppColors.primaryColor, AppColors.secondaryColor, AppColors.accentColor, Colors.blue, Colors.green, Colors.purple],
+            colors: [
+              AppColors.primaryColor,
+              AppColors.secondaryColor,
+              AppColors.accentColor,
+              Colors.blue,
+              Colors.green,
+              Colors.purple
+            ],
           ),
         ],
       ),

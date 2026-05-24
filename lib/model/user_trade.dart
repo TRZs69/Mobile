@@ -11,9 +11,9 @@ class UserTrade {
 
   factory UserTrade.fromJson(Map<String, dynamic> json) {
     return UserTrade(
-        id: json['id'],
-        userId: json['userId'],
-        tradeId: json['tradeId'],
+      id: json['id'],
+      userId: json['userId'],
+      tradeId: json['tradeId'],
     );
   }
 }

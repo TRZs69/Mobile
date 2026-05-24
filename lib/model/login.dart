@@ -1,4 +1,4 @@
-class Login{
+class Login {
   int id;
   String name;
   String role;

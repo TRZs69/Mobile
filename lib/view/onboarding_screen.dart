@@ -6,7 +6,6 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'login_screen.dart';
 
-
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -99,7 +98,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 );
                               }
                             : () async {
-                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
                                 await prefs.setBool('firstLaunch', false);
 
                                 Navigator.pushReplacement(
@@ -167,43 +167,36 @@ class OnboardingPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Spacer(flex: isLandscape ? 1 : 2),
-
               Container(
                 color: Colors.white,
                 height: isLandscape ? 56 : 112,
               ),
-
               Image.asset(
                 model.image,
                 height: imageHeight,
               ),
-
               SizedBox(height: 20),
-
               Text(
                 model.title,
                 style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'DIN_Next_Rounded',
-                  color: AppColors.primaryColor,
-                  fontSize: titleSize,
-                ),
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'DIN_Next_Rounded',
+                      color: AppColors.primaryColor,
+                      fontSize: titleSize,
+                    ),
               ),
-
               SizedBox(height: 10),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: Text(
                   model.description,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontFamily: 'DIN_Next_Rounded',
-                    fontSize: descriptionSize,
-                  ),
+                        fontFamily: 'DIN_Next_Rounded',
+                        fontSize: descriptionSize,
+                      ),
                 ),
               ),
-
               Spacer(flex: isLandscape ? 2 : 3),
               SizedBox(height: bottomReservedSpace),
             ],

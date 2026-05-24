@@ -27,9 +27,8 @@ class ChatSession {
 
   factory ChatSession.fromJson(Map<String, dynamic> json) {
     final metadataRaw = json['metadata'];
-    final metadata = metadataRaw is Map<String, dynamic>
-      ? metadataRaw
-      : <String, dynamic>{};
+    final metadata =
+        metadataRaw is Map<String, dynamic> ? metadataRaw : <String, dynamic>{};
 
     return ChatSession(
       id: json['id']?.toString() ?? '',
@@ -52,14 +51,16 @@ class ChatSession {
 }
 
 class ChatSessionApi {
-  static Future<List<ChatSession>> fetchSessions(int userId, {int? chapterId}) async {
+  static Future<List<ChatSession>> fetchSessions(int userId,
+      {int? chapterId}) async {
     final params = <String, String>{
       't': DateTime.now().millisecondsSinceEpoch.toString(),
     };
     if (chapterId != null && chapterId > 0) {
       params['chapterId'] = chapterId.toString();
     }
-    final url = Uri.parse('${GlobalVar.baseUrl}/chat/session/user/$userId').replace(queryParameters: params);
+    final url = Uri.parse('${GlobalVar.baseUrl}/chat/session/user/$userId')
+        .replace(queryParameters: params);
     try {
       final response = await http.get(url);
       if (response.statusCode != 200) return [];
@@ -71,7 +72,9 @@ class ChatSessionApi {
         final List<dynamic> data = body['sessions'] ?? [];
         final sessions = data.map((e) => ChatSession.fromJson(e)).toList();
         if (chapterId != null && chapterId > 0) {
-          return sessions.where((session) => session.chapterId == chapterId).toList();
+          return sessions
+              .where((session) => session.chapterId == chapterId)
+              .toList();
         }
         return sessions;
       } catch (e) {
@@ -84,7 +87,8 @@ class ChatSessionApi {
     }
   }
 
-  static Future<ChatSession?> createSession(int userId, {int? chapterId}) async {
+  static Future<ChatSession?> createSession(int userId,
+      {int? chapterId}) async {
     final url = Uri.parse('${GlobalVar.baseUrl}/chat/session');
     final payload = <String, dynamic>{'userId': userId};
     if (chapterId != null && chapterId > 0) {

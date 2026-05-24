@@ -68,13 +68,13 @@ class LevelyApp extends StatelessWidget {
       timeout: const Duration(minutes: 15),
       child: MaterialApp(
         title: 'Levelearn',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
-        scaffoldBackgroundColor: Colors.white,
-        useMaterial3: true,
-      ),
-      home: const _BootstrapScreen(),
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
+          scaffoldBackgroundColor: Colors.white,
+          useMaterial3: true,
+        ),
+        home: const _BootstrapScreen(),
       ),
     );
   }
