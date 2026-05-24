@@ -695,16 +695,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           ),
           _buildVerticalDivider(),
           _buildStatItem(
-            label: 'Poin Soal',
-            subLabel: 'Terakhir',
+            label: 'Poin',
             value: '+${(_pointsAwardedPreview ?? 0).toInt()}',
             icon: Icons.monetization_on,
             color: Colors.orange,
           ),
           _buildVerticalDivider(),
           _buildStatItem(
-            label: 'Delta Soal',
-            subLabel: 'Terakhir',
+            label: 'Perubahan Elo',
             value:
                 '${(_eloDeltaQuestion ?? 0) >= 0 ? '+' : ''}${(_eloDeltaQuestion ?? 0).toStringAsFixed(1)}',
             icon: (_eloDeltaQuestion ?? 0) >= 0
@@ -719,7 +717,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   Widget _buildStatItem({
     required String label,
-    String? subLabel,
     required String value,
     required IconData icon,
     required Color color,
@@ -747,15 +744,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (subLabel != null)
-                      Text(
-                        subLabel,
-                        style: TextStyle(
-                          fontFamily: 'DIN_Next_Rounded',
-                          fontSize: 8,
-                          color: Colors.grey.withOpacity(0.7),
-                        ),
-                      ),
                   ],
                 ),
               ),
