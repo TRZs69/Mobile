@@ -1,3 +1,4 @@
+import "package:flutter/foundation.dart";
 import 'package:app/model/user_badge.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -20,13 +21,13 @@ class UserBadgeService {
           body: jsonEncode(request));
 
       final body = response.body;
-      print(body);
+      debugPrint(body);
       final result = jsonDecode(body);
-      print(result);
+      debugPrint(result);
       UserBadge userbadge = UserBadge.fromJson(result['UserBadge']);
       return userbadge;
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
       throw Exception(e.toString());
     }
   }

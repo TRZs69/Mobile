@@ -1,7 +1,7 @@
+// ignore_for_file: empty_catches, unused_local_variable, deprecated_member_use
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
 import 'package:app/model/assessment.dart';
 import 'package:app/model/assessment_attempt.dart';
@@ -53,7 +53,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   bool _isStartingAttempt = false;
   bool _isSubmittingAnswer = false;
   bool _isFinishing = false;
-  Map<int, int> _gamificationPoints = {};
+  final Map<int, int> _gamificationPoints = {};
   bool _assessmentStarted = false;
   bool _assessmentFinished = false;
   bool _forceNewOnNextStart = false;
@@ -125,7 +125,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         try {
           freshUc =
               await UserCourseService.getUserCourse(user!.id, widget.courseId!);
-        } catch (_) {}
+        } catch (error) {}
       }
 
       final currentAttempt = await ChapterService.getCurrentAssessmentAttempt(
@@ -145,7 +145,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         return;
       }
       _applyAttempt(currentAttempt, lockMaterial: true);
-    } catch (_error) {
     } finally {
       if (mounted) {
         setState(() {
@@ -402,7 +401,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       setState(() {
         _servedQuestions = latestAttempt.questions.map(_copyQuestion).toList();
       });
-    } catch (_error) {}
+    } catch (error) {}
   }
 
   Future<void> _applyFinalResult(Map<String, dynamic> result) async {
@@ -496,7 +495,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Future<void> _persistStatus() async {
     try {
       status = await UserChapterService.updateChapterStatus(status.id, status);
-    } catch (_error) {}
+    } catch (error) {}
   }
 
   Future<void> _refreshUserSnapshot() async {
@@ -509,7 +508,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         user?.elo = refreshed.elo;
         user?.eloTitle = refreshed.eloTitle;
       });
-    } catch (_error) {}
+    } catch (error) {}
   }
 
   Question _copyQuestion(Question source) {
@@ -523,7 +522,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       servedOrder: source.servedOrder,
     );
     copy.selectedAnswer = source.selectedAnswer;
-    copy.selectedMultiAnswer = List<String>.from(source.selectedMultAnswer);
+    copy.selectedMultiAnswer = List<String>.from(source.selectedMultiAnswer);
     copy.isCorrect = source.isCorrect;
     copy.score = source.score;
     return copy;
@@ -674,16 +673,16 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryColor.withOpacity(0.1),
+            color: AppColors.primaryColor.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: AppColors.primaryColor.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -768,7 +767,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     return Container(
       height: 30,
       width: 1,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
     );
   }
 

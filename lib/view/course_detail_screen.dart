@@ -1,3 +1,4 @@
+// ignore_for_file: body_might_complete_normally_catch_error
 import 'dart:async';
 
 import 'package:app/model/chapter.dart';
@@ -10,7 +11,6 @@ import 'package:app/service/user_chapter_service.dart';
 import 'package:app/service/user_course_service.dart';
 import 'package:app/service/user_service.dart';
 import 'package:flutter/material.dart';
-import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:app/model/badge.dart';
@@ -19,7 +19,6 @@ import 'package:app/model/user.dart';
 import 'package:app/model/user_course.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/view/chapter_screen.dart';
-import 'package:app/view/widgets/custom_refresh_scroll.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final int id;
@@ -78,7 +77,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
   }
 
   String _chapterCacheKey() {
-    return '${idUser}_${idCourse}';
+    return '${idUser}_$idCourse';
   }
 
   Future<void> _bootstrap() async {
@@ -647,8 +646,8 @@ class _CourseDetail extends State<CourseDetailScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.15),
-                    Colors.black.withOpacity(0.65),
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.65),
                   ],
                 ),
               ),
@@ -664,7 +663,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -856,7 +855,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                           fontFamily: 'Modak',
                           shadows: [
                             Shadow(
-                              color: Colors.green.shade900.withOpacity(0.7),
+                              color: Colors.green.shade900.withValues(alpha: 0.7),
                               blurRadius: 0,
                               offset: Offset(3, 3),
                             ),
@@ -932,7 +931,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                   color: Colors.green.shade600,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.shade900.withOpacity(0.8),
+                      color: Colors.green.shade900.withValues(alpha: 0.8),
                       blurRadius: 10,
                       spreadRadius: 2,
                       offset: Offset(0, 6),
@@ -948,7 +947,7 @@ class _CourseDetail extends State<CourseDetailScreen> {
                       fontFamily: 'Modak',
                       shadows: [
                         Shadow(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           blurRadius: 4,
                           offset: Offset(2, 2),
                         ),

@@ -37,9 +37,9 @@ class Question {
   String type;
   int elo;
   int? servedOrder;
-  String _selectedAnswer = '';
+  String selectedAnswer = '';
   int score = 0;
-  List<String> _selectedMultiAnswer = [];
+  List<String> selectedMultiAnswer = [];
   bool isCorrect = false;
 
   Question({
@@ -79,16 +79,5 @@ class Question {
     q.score = map['score'] is int ? map['score'] as int : 0;
 
     return q;
-  }
-
-  String get selectedAnswer => _selectedAnswer;
-  List<String> get selectedMultAnswer => _selectedMultiAnswer;
-
-  set selectedAnswer(String value) {
-    _selectedAnswer = value;
-  }
-
-  set selectedMultiAnswer(List<String> list) {
-    _selectedMultiAnswer = list;
   }
 }

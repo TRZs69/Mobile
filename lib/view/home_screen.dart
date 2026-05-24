@@ -17,7 +17,6 @@ import 'chatbot_screen.dart';
 import 'login_screen.dart';
 
 import 'package:app/view/chatbot_response_rating.dart';
-import 'package:app/view/widgets/custom_refresh_scroll.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) updateIndex;
@@ -256,7 +255,7 @@ class _HomeState extends State<HomeScreen> {
                     'Gagal memuat course. Periksa koneksi internet Anda.')),
           );
         });
-        print('Error getEnrolledCourse: $e');
+        debugPrint('Error getEnrolledCourse: $e');
       } finally {
         _isFetchingEnrolled = false;
       }
@@ -326,7 +325,7 @@ class _HomeState extends State<HomeScreen> {
                   'Gagal memuat data pengguna. Periksa koneksi internet Anda.')),
         );
       });
-      print('Error getAllUser: $e');
+      debugPrint('Error getAllUser: $e');
     }
   }
 
@@ -870,7 +869,8 @@ class _HomeState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildChatShortcut() {
+  // ignore: unused_element
+Widget _buildChatShortcut() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: ElevatedButton(

@@ -1,3 +1,4 @@
+import "package:flutter/foundation.dart";
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_cache_service.dart';
@@ -29,7 +30,7 @@ class UserCourseService {
       );
       final body = response.body;
       final result = jsonDecode(body);
-      print(result);
+      debugPrint(result);
       if (result is List && result.isNotEmpty) {
         status = UserCourse.fromJson(result[0]);
       }
@@ -62,7 +63,7 @@ class UserCourseService {
             '/user/${uc.userId}/courses');
         await ApiCacheService.clearCacheContaining(
             '/usercourse/${uc.userId}/${uc.courseId}');
-        print("Update Successful");
+        debugPrint("Update Successful");
       }
     } catch (e) {
       throw Exception(e.toString());

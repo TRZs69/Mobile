@@ -10,7 +10,6 @@ import 'package:app/view/about_app.dart';
 import 'package:app/view/quick_access_screen.dart';
 import 'package:app/view/trade_screen.dart';
 import 'package:app/view/update_profile_screen.dart';
-import 'package:app/view/widgets/custom_refresh_scroll.dart';
 import 'package:app/service/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -415,7 +414,7 @@ class _ProfileState extends State<ProfileScreen> {
                                         height: 120,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: Colors.white.withOpacity(0.1),
+                                          color: Colors.white.withValues(alpha: 0.1),
                                         ),
                                         child: ClipOval(
                                           child: currentUser.image != "" &&
@@ -427,8 +426,9 @@ class _ProfileState extends State<ProfileScreen> {
                                                   height: 120,
                                                   loadingBuilder: (context,
                                                       child, loadingProgress) {
-                                                    if (loadingProgress == null)
+                                                    if (loadingProgress == null) {
                                                       return child;
+                                                    }
                                                     return const Center(
                                                         child:
                                                             CircularProgressIndicator());
@@ -601,7 +601,7 @@ class _ProfileState extends State<ProfileScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.withOpacity(0.3),
+                                    color: Colors.grey.withValues(alpha: 0.3),
                                     spreadRadius: 2,
                                     blurRadius: 5,
                                     offset: Offset(0, 3),
@@ -672,8 +672,9 @@ class _ProfileState extends State<ProfileScreen> {
                                                                         child,
                                                                         loadingProgress) {
                                                                   if (loadingProgress ==
-                                                                      null)
+                                                                      null) {
                                                                     return child;
+                                                                  }
                                                                   return const Center(
                                                                       child:
                                                                           CircularProgressIndicator(
@@ -800,7 +801,7 @@ class _ProfileState extends State<ProfileScreen> {
                             child: CustomPaint(
                               painter: _SpotlightScrimPainter(
                                 focusRect: _getEloFocusRect(),
-                                scrimColor: Colors.black.withOpacity(0.12),
+                                scrimColor: Colors.black.withValues(alpha: 0.12),
                               ),
                             ),
                           ),
@@ -933,7 +934,7 @@ class _ProfileState extends State<ProfileScreen> {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: isFocused ? Colors.amber.withOpacity(0.16) : Colors.transparent,
+        color: isFocused ? Colors.amber.withValues(alpha: 0.16) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isFocused ? Colors.amber.shade600 : Colors.transparent,
@@ -942,7 +943,7 @@ class _ProfileState extends State<ProfileScreen> {
         boxShadow: isFocused
             ? [
                 BoxShadow(
-                  color: Colors.amber.withOpacity(0.28),
+                  color: Colors.amber.withValues(alpha: 0.28),
                   blurRadius: 16,
                   spreadRadius: 1,
                 ),
@@ -1177,7 +1178,7 @@ class ProfileMenuWidget extends StatelessWidget {
                   height: 30,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(100),
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                   ),
                   child: const Icon(LineAwesomeIcons.angle_right_solid,
                       size: 18.0, color: Colors.grey))

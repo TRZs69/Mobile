@@ -1,4 +1,4 @@
-import 'dart:io';
+// ignore_for_file: unused_field, unused_local_variable, unused_element
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -154,8 +154,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       final response = await http
           .get(Uri.parse('${GlobalVar.baseUrl}/chat/history/$sessionId'));
       if (response.statusCode != 200) {
-        if (response.statusCode == 400 || response.statusCode == 404)
+        if (response.statusCode == 400 || response.statusCode == 404) {
           await _clearPersistedSession();
+        }
         return;
       }
       String bodyStr = response.body.trim();
@@ -240,7 +241,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (next == null ||
         next.isEmpty ||
         next.toLowerCase() == 'null' ||
-        next == _sessionId) return;
+        next == _sessionId) {
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_sessionPrefsKey, next);
     if (!mounted) return;
@@ -386,8 +389,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ..body = jsonEncode(body);
 
       final response = await client.send(request);
-      if (response.statusCode != 200)
+      if (response.statusCode != 200) {
         throw Exception('Server error: ${response.statusCode}');
+      }
 
       final rawStream = response.stream.transform(utf8.decoder);
       String sseBuffer = '';
@@ -401,8 +405,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
           if (line.startsWith('data:')) {
             String dataStr = line.substring(5).trim();
-            if (dataStr.startsWith('\uFEFF'))
+            if (dataStr.startsWith('\uFEFF')) {
               dataStr = dataStr.substring(1).trim();
+            }
             if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
 
@@ -418,8 +423,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               final payload = jsonDecode(dataStr) as Map<String, dynamic>;
               if (payload['error'] != null) throw Exception(payload['error']);
               final sessionValue = payload['sessionId']?.toString();
-              if (sessionValue != null && sessionValue.isNotEmpty)
+              if (sessionValue != null && sessionValue.isNotEmpty) {
                 _persistSessionId(sessionValue, skipFetch: true);
+              }
 
               final delta = payload['delta']?.toString();
               if (delta != null && delta.isNotEmpty) {
@@ -444,10 +450,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 );
               }
 
-              if (payload['titleDelta'] != null)
+              if (payload['titleDelta'] != null) {
                 _updateSessionTitleStream(payload['titleDelta']);
-              if (payload['title'] != null)
+              }
+              if (payload['title'] != null) {
                 _updateSessionTitleFinal(payload['title']);
+              }
             } catch (e) {
               debugPrint('Error parsing stream SSE data: $e | data: $dataStr');
             }
@@ -562,8 +570,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
-                      if (index >= _messages.length)
+                      if (index >= _messages.length) {
                         return const SizedBox.shrink();
+                      }
                       final msg = _messages[index];
                       return ChatBubble(
                         message: msg,
@@ -815,8 +824,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ..body = jsonEncode(body);
 
       final response = await client.send(request);
-      if (response.statusCode != 200)
+      if (response.statusCode != 200) {
         throw Exception('Server error: ${response.statusCode}');
+      }
 
       final rawStream = response.stream.transform(utf8.decoder);
       String sseBuffer = '';
@@ -830,8 +840,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
           if (line.startsWith('data:')) {
             String dataStr = line.substring(5).trim();
-            if (dataStr.startsWith('\uFEFF'))
+            if (dataStr.startsWith('\uFEFF')) {
               dataStr = dataStr.substring(1).trim();
+            }
             if (dataStr.isEmpty) continue;
             if (dataStr == '[DONE]') break;
 
@@ -1099,8 +1110,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               padding: EdgeInsets.zero,
               itemCount: filteredSessions.length,
               itemBuilder: (context, i) {
-                if (i >= filteredSessions.length)
+                if (i >= filteredSessions.length) {
                   return const SizedBox.shrink();
+                }
                 final session = filteredSessions[i];
                 return ListTile(
                   title: Text(session.title ?? 'Chat Baru'),

@@ -1,3 +1,4 @@
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
 import 'dart:io';
 
 import 'package:app/global_var.dart';
@@ -83,19 +84,19 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Waktu koneksi habis. Coba lagi nanti.")),
       );
-      print("Waktu koneksi habis. Coba lagi nanti.");
+      debugPrint("Waktu koneksi habis. Coba lagi nanti.");
     } on SocketException catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
                 "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.")),
       );
-      print("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      debugPrint("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Terjadi kesalahan: ${e.toString()}")),
       );
-      print("Terjadi kesalahan: ${e.toString()}");
+      debugPrint("Terjadi kesalahan: ${e.toString()}");
     }
 
     setState(() => isLoading = false);
@@ -318,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   ? Icons.visibility_off
                                                   : Icons.visibility,
                                               color: AppColors.primaryColor
-                                                  .withOpacity(0.7),
+                                                  .withValues(alpha: 0.7),
                                             ),
                                             onPressed: () {
                                               setState(() {

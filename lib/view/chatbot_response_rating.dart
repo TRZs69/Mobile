@@ -240,7 +240,7 @@ class _ChatbotResponseRatingState extends State<ChatbotResponseRating> {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.accentColor.withOpacity(0.15),
+              color: AppColors.accentColor.withValues(alpha: 0.15),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -400,7 +400,8 @@ class _FormattedMessage extends StatelessWidget {
           ],
         );
       case _BlockType.paragraph:
-      default:
+      // ignore: unreachable_switch_default
+default:
         return Text.rich(
           TextSpan(
               style: baseStyle,

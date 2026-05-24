@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:app/model/chapter_status.dart';
 import 'package:app/model/user_course.dart';
 import 'package:app/utils/colors.dart';

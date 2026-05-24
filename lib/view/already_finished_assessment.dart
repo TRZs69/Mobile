@@ -38,7 +38,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState
   late ChapterStatus status;
   Assessment? question;
   Future<bool>? _resultFuture;
-  Map<int, int> _gamificationPoints = {};
+  final Map<int, int> _gamificationPoints = {};
 
   @override
   void initState() {
@@ -61,7 +61,9 @@ class _AlreadyFinishedAssessmentAssessmentScreenState
         });
         return;
       }
-    } catch (_error) {}
+    } catch (_) {
+      // ignore
+    }
 
     final resultAssessment = await ChapterService.getAssessmentByChapterId(id);
     setState(() {
@@ -98,7 +100,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState
           }
         } catch (e) {
           if (kDebugMode) {
-            print("Error processing essay at index $index: $e");
+            debugPrint("Error processing essay at index $index: $e");
           }
         }
       }
@@ -205,7 +207,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState
         }
         correctAnswer++;
 
-        int qElo = current.elo ?? 800;
+        int qElo = current.elo;
         double expectedProb =
             1 / (1 + math.pow(10, -(currentUserElo - qElo) / 400));
         double w = 1 - expectedProb;
@@ -632,7 +634,7 @@ class _AlreadyFinishedAssessmentAssessmentScreenState
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.deepPurple.withOpacity(0.2),
+                      color: Colors.deepPurple.withValues(alpha: 0.2),
                       blurRadius: 6,
                       spreadRadius: 1,
                       offset: Offset(0, 2),
@@ -651,9 +653,11 @@ class _AlreadyFinishedAssessmentAssessmentScreenState
               ),
             ),
             value: answer,
+            // ignore: deprecated_member_use
             groupValue: question.selectedAnswer,
             activeColor: AppColors.primaryColor,
             contentPadding: EdgeInsets.zero,
+            // ignore: deprecated_member_use
             onChanged: tapped
                 ? null
                 : (String? value) {

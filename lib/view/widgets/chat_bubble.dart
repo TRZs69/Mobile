@@ -34,7 +34,7 @@ class ChatBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: isUser
             ? AppColors.primaryColor
-            : AppColors.accentColor.withOpacity(0.15),
+            : AppColors.accentColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -222,7 +222,7 @@ class ChatBubble extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.accentColor.withOpacity(0.2),
+        color: AppColors.accentColor.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       padding: const EdgeInsets.all(6),

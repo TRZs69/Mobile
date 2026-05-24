@@ -1,15 +1,14 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:app/model/user.dart';
 import 'package:app/model/user_course.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:app/model/assignment.dart';
 import 'package:app/model/chapter_status.dart';
-import 'package:app/service/badge_service.dart';
 import 'package:app/service/chapter_service.dart';
 import 'package:app/service/user_chapter_service.dart';
 import 'package:app/service/user_service.dart';
 import 'package:app/utils/colors.dart';
-import 'package:app/view/main_screen.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -18,7 +17,6 @@ import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../service/user_course_service.dart';
 import 'congratulation_screen.dart';
@@ -146,8 +144,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
     Uint8List bytes = file.bytes ?? await File(file.path!).readAsBytes();
 
     try {
-      print('DEBUG: Attempting upload to bucket assignments');
-      print('DEBUG: Path: $path');
+      debugPrint('DEBUG: Attempting upload to bucket assignments');
+      debugPrint('DEBUG: Path: $path');
       final response = await Supabase.instance.client.storage
           .from('assignments')
           .uploadBinary(
@@ -155,7 +153,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
             bytes,
             retryAttempts: 3,
           );
-      print('DEBUG: Upload response path: $response');
+      debugPrint('DEBUG: Upload response path: $response');
 
       final publicUrl = getPublicUrl(path);
       status.timeFinished = DateTime.now();
@@ -181,7 +179,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Upload error: $e');
+        debugPrint('Upload error: $e');
       }
       if (mounted) {
         setState(() {
@@ -500,11 +498,11 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(
-                          color: AppColors.primaryColor.withOpacity(0.2)),
+                          color: AppColors.primaryColor.withValues(alpha: 0.2)),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -538,7 +536,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                               padding: EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryColor.withOpacity(0.1),
+                                color: AppColors.primaryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -623,7 +621,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
         width: double.infinity,
         height: 300,
         decoration: BoxDecoration(
-          color: AppColors.secondaryColor.withOpacity(0.05),
+          color: AppColors.secondaryColor.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(

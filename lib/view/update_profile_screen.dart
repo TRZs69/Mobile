@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'dart:io';
 
 import 'package:app/model/user.dart';
@@ -16,7 +17,6 @@ import 'package:intl/intl.dart';
 import '../service/api_cache_service.dart';
 import '../service/user_service.dart';
 import '../utils/colors.dart';
-import 'login_screen.dart';
 
 class UpdateProfile extends StatefulWidget {
   final Student user;
@@ -154,8 +154,9 @@ class _UpdateProfileState extends State<UpdateProfile> {
                                       height: 120,
                                       loadingBuilder:
                                           (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
+                                        if (loadingProgress == null) {
                                           return child;
+                                        }
                                         return const Center(
                                             child: CircularProgressIndicator());
                                       },
@@ -324,13 +325,16 @@ class _UpdateProfileState extends State<UpdateProfile> {
 
                                       Map<String, dynamic> patch = {};
                                       if (newName.isNotEmpty &&
-                                          newName != user?.name)
+                                          newName != user?.name) {
                                         patch['name'] = newName;
+                                      }
                                       if (newUsername.isNotEmpty &&
-                                          newUsername != user?.username)
+                                          newUsername != user?.username) {
                                         patch['username'] = newUsername;
-                                      if (newPhotoUrl != null)
+                                      }
+                                      if (newPhotoUrl != null) {
                                         patch['image'] = newPhotoUrl;
+                                      }
 
                                       if (newPassword.isNotEmpty) {
                                         await UserService.updatePassword(user!

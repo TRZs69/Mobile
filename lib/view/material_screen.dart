@@ -265,7 +265,7 @@ class _MaterialScreenState extends State<MaterialScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.8),
+                      color: AppColors.primaryColor.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(

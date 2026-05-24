@@ -147,10 +147,10 @@ class _MainState extends State<Mainscreen> {
       );
 
       if (response.statusCode != 204) {
-        print('Heartbeat failed with status: ${response.statusCode}');
+        debugPrint('Heartbeat failed with status: ${response.statusCode}');
       }
     } catch (e) {
-      print('Heartbeat error: $e');
+      debugPrint('Heartbeat error: $e');
     }
   }
 
@@ -225,7 +225,7 @@ class _MainState extends State<Mainscreen> {
         context: context,
         barrierDismissible: true,
         barrierLabel: 'welcome-learning-dialog',
-        barrierColor: Colors.black.withOpacity(0.1),
+        barrierColor: Colors.black.withValues(alpha: 0.1),
         transitionDuration: const Duration(milliseconds: 220),
         pageBuilder: (context, animation, secondaryAnimation) {
           return SafeArea(
@@ -374,7 +374,7 @@ class _MainState extends State<Mainscreen> {
     return [
       Positioned.fill(
         child: Container(
-          color: Colors.black.withOpacity(0.18),
+          color: Colors.black.withValues(alpha: 0.18),
         ),
       ),
       _buildTutorialCard(),
@@ -414,7 +414,7 @@ class _MainState extends State<Mainscreen> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: purple.withOpacity(0.12),
+                        color: purple.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.lightbulb_outline_rounded,

@@ -272,7 +272,8 @@ class _CourseInitialScreenState extends State<CourseInitialScreen> {
     }
   }
 
-  Widget _badgeIcon(String? rawUrl) {
+  // ignore: unused_element
+Widget _badgeIcon(String? rawUrl) {
     if (rawUrl == null || rawUrl.isEmpty) {
       return Image.asset('lib/assets/empty.png', width: 50, height: 50);
     }

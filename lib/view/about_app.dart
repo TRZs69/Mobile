@@ -16,6 +16,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
   void _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Tidak dapat membuka URL: $url')),
       );

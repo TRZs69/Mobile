@@ -48,7 +48,7 @@ class _TradeDetailScreenState extends State<TradeDetailScreen> {
 
         await updateUserPoints();
 
-        print('Pembelian berhasil!');
+        debugPrint('Pembelian berhasil!');
         if (mounted) {
           showCompletionDialog(
               context, "Transaksi poin anda telah berhasil!", false);

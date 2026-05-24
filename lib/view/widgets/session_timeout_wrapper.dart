@@ -1,3 +1,4 @@
+// ignore_for_file: library_private_types_in_public_api
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,10 +10,10 @@ class SessionTimeoutWrapper extends StatefulWidget {
   final Duration timeout;
 
   const SessionTimeoutWrapper({
-    Key? key,
+    super.key,
     required this.child,
     this.timeout = const Duration(minutes: 30),
-  }) : super(key: key);
+  });
 
   @override
   _SessionTimeoutWrapperState createState() => _SessionTimeoutWrapperState();
